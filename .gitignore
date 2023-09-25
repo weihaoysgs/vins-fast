@@ -1,4 +1,5 @@
 bin/
 build/
 lib/
-
+.idea/
+vision_opencv/
