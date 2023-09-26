@@ -64,26 +64,10 @@ FeatureTracker::TrackImage(double current_time, const cv::Mat &img0, const cv::M
       if (status[i] && !InBorder(current_kps_[i], current_img_.rows, current_img_.cols))
         status[i] = 0;
     }
-    {
-      cv::Mat draw_img;
-      cv::cvtColor(previous_img_, draw_img, cv::COLOR_GRAY2BGR);
-      assert(previous_kps_.size() == current_kps_.size());
-      for (size_t i = 0; i < current_kps_.size(); ++i)
-      {
-        cv::Point2f pt1 = current_kps_[i];
-        if (pt1.x >= 0 && pt1.y >= 0)
-        {
-          cv::Point2f pt2 = previous_kps_[i];
-          cv::circle(draw_img, pt1, 2, cv::Scalar(0, 255, 0), -1);
-          cv::line(draw_img, pt1, pt2, cv::Scalar(0, 0, 255), 2);
-        }
-      }
-      cv::imshow("res", draw_img);
-    }
+    DrawTrackResultWithLine(1);
     ReduceVector(current_kps_, status);
     ReduceVector(ids_, status);
     ReduceVector(track_count_, status);
-
     DrawIdsTrackCount(0);
   }
 
@@ -167,5 +151,24 @@ void FeatureTracker::SetFeatureExtractorMask(cv::Mat &mask)
       cv::circle(mask, it.second.first, MIN_DIST, 0, -1);
     }
   }
+}
+
+void FeatureTracker::DrawTrackResultWithLine(int wait_key)
+{
+  cv::Mat draw_img;
+  cv::cvtColor(previous_img_, draw_img, cv::COLOR_GRAY2BGR);
+  assert(previous_kps_.size() == current_kps_.size());
+  for (size_t i = 0; i < current_kps_.size(); ++i)
+  {
+    cv::Point2f pt1 = current_kps_[i];
+    if (pt1.x >= 0 && pt1.y >= 0)
+    {
+      cv::Point2f pt2 = previous_kps_[i];
+      cv::circle(draw_img, pt1, 2, cv::Scalar(0, 255, 0), -1);
+      cv::line(draw_img, pt1, pt2, cv::Scalar(0, 0, 255), 2);
+    }
+  }
+  cv::imshow("track_result", draw_img);
+  cv::waitKey(wait_key);
 }
 } // namespace estimator

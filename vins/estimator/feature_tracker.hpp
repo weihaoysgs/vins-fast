@@ -19,6 +19,7 @@ public:
   TrackImage(double current_time, const cv::Mat &img0, const cv::Mat &img1 = cv::Mat());
   bool InBorder(const cv::Point2f &pt, int row, int col);
   void DrawIdsTrackCount(int wait_key);
+  void DrawTrackResultWithLine(int wait_key);
   void SetFeatureExtractorMask(cv::Mat &mask);
   double PtDistance(cv::Point2f &pt1, cv::Point2f &pt2)
   {
