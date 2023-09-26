@@ -164,7 +164,7 @@ BreakAfterJavaFieldAnnotations: false
 # 字面字符串是否换行, true
 BreakStringLiterals: true
 # 代码列字符上限
-ColumnLimit:     90
+ColumnLimit:     120
 # pragma注释
 CommentPragmas:  '^ IWYU pragma:'
 # 注释关键字对齐(const/volatile), 建议Leave

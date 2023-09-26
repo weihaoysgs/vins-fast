@@ -1,12 +1,19 @@
 find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  rospy
-  std_msgs
-  rosbag
-  camera_models
+roscpp
+std_msgs
+rosbag
+geometry_msgs
+nav_msgs
+tf
+cv_bridge
+camera_models
+image_transport)
+find_package(OpenCV 3 REQUIRED)
+include_directories(
+  ${OpenCV_INCLUDE_DIRS}
+  ${catkin_INCLUDE_DIRS}
+  ${PROJECT_SOURCE_DIR}/thirdparty/eigen
+  ${PROJECT_SOURCE_DIR}/thirdparty/sophus
+  ${PROJECT_SOURCE_DIR}
 )
 
-include_directories(${catkin_INCLUDE_DIRS})
-include_directories(${PROJECT_SOURCE_DIR}/thirdparty/eigen)
-include_directories(${PROJECT_SOURCE_DIR}/thirdparty/sophus)
-include_directories(${PROJECT_SOURCE_DIR})
