@@ -26,7 +26,7 @@ void Estimator::ReadImuCameraExternalParam()
   LOG(INFO) << "Cam1 calib file: " << cam1_calib_file_path;
 }
 
-estimator::Estimator::Estimator()
+Estimator::Estimator()
 {
   USE_IMU = common::Setting::getSingleton()->Get<int>("imu");
   IMG0_TOPIC_NAME = common::Setting::getSingleton()->Get<std::string>("image0_topic");
@@ -41,9 +41,11 @@ estimator::Estimator::Estimator()
 
   std::thread t_frontend_process = std::thread(&Estimator::tFrontendProcess, this);
   t_frontend_process.detach();
+  std::thread t_backend_process = std::thread(&Estimator::tBackendProcess, this);
+  t_backend_process.detach();
 }
 
-void estimator::Estimator::tFrontendProcess()
+void Estimator::tFrontendProcess()
 {
   while (true)
   {
@@ -82,7 +84,7 @@ void estimator::Estimator::tFrontendProcess()
   }
 }
 
-void estimator::Estimator::ProcessImage(double t, const cv::Mat &img0, const cv::Mat &img1)
+void Estimator::ProcessImage(double t, const cv::Mat &img0, const cv::Mat &img1)
 {
   input_image_cnt_++;
   std::map<int, std::vector<std::pair<int, Eigen::Matrix<double, 7, 1>>>> frame_feature;
@@ -91,6 +93,16 @@ void estimator::Estimator::ProcessImage(double t, const cv::Mat &img0, const cv:
   {
     std::unique_lock<std::mutex> lck(feature_buf_mutex_);
     feature_buf_.push(std::make_pair(t, frame_feature));
+  }
+}
+
+void Estimator::tBackendProcess()
+{
+  while (true)
+  {
+    LOG(INFO) <<"Backend";
+    std::chrono::milliseconds dura(200);
+    std::this_thread::sleep_for(dura);
   }
 }
 
