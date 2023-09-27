@@ -9,7 +9,6 @@
 #include "Eigen/Dense"
 #include "memory"
 #include "mutex"
-#include "sophus/se3.hpp"
 #include "glog/logging.h"
 
 namespace common {
@@ -26,10 +25,10 @@ public:
     return singleton_;
   }
   bool InitParamSetting(const std::string config_file_path);
-
+  const cv::FileStorage& getFile() const { return file_; }
   // access the parameter values
-  template <typename T> static T Get(const std::string &key) {
-    T a = Setting::singleton_->file_[key];
+  template <typename T> static T Get(const std::string &key)
+  {
     return T(Setting::singleton_->file_[key]);
   }
   ~Setting() = default;

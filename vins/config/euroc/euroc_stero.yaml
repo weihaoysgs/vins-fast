@@ -11,8 +11,8 @@ output_path: "/home/weihao/codespace/whvio_ws/output/"
 
 ros_bag_path: "/home/weihao/dataset/euroc/MH_05_difficult.bag"
 
-cam0_calib: "cam0_mei.yaml"
-cam1_calib: "cam1_mei.yaml"
+cam0_calib: "/home/weihao/codespace/whvio_ws/src/vins-fast/vins/config/euroc/cam0_mei.yaml"
+cam1_calib: "/home/weihao/codespace/whvio_ws/src/vins-fast/vins/config/euroc/cam1_mei.yaml"
 
 image_width: 752
 image_height: 480
@@ -39,6 +39,7 @@ body_T_cam1: !!opencv-matrix
 multiple_thread: 1
 
 #feature traker paprameters
+frontend_wait_key: 1
 max_cnt: 300            # max feature number in feature tracking
 min_dist: 15            # min distance between two features
 freq: 10                # frequence (Hz) of publish tracking result. At least 10Hz for good estimation. If set 0, the frequence will be same as raw image 

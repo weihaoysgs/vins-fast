@@ -2,16 +2,43 @@
 
 namespace estimator {
 
-};
+void Estimator::ReadImuCameraExternalParam()
+{
+  cv::Mat cv_T_0, cv_T_1;
+  Eigen::Matrix4d T0, T1;
+  common::Setting::getSingleton()->getFile()["body_T_cam0"] >> cv_T_0;
+  cv::cv2eigen(cv_T_0, T0);
+  ric[0] = T0.block<3, 3>(0, 0);
+  tic[0] = T0.block<3, 1>(0, 3);
+  common::Setting::getSingleton()->getFile()["body_T_cam1"] >> cv_T_1;
+  cv::cv2eigen(cv_T_1, T1);
+  ric[1] = T1.block<3, 3>(0, 0);
+  tic[1] = T1.block<3, 1>(0, 3);
+  LOG(INFO) << "Cam0 R:\n" << ric[0] << "\n t: " << tic[0].transpose();
+  LOG(INFO) << "Cam1 R:\n" << ric[1] << "\n t: " << tic[1].transpose();
+
+  std::string cam0_calib_file_path = common::Setting::getSingleton()->Get<std::string>("cam0_calib");
+  std::string cam1_calib_file_path = common::Setting::getSingleton()->Get<std::string>("cam1_calib");
+  assert(common::FileExists(cam0_calib_file_path) && common::FileExists(cam1_calib_file_path));
+  camera_calib_file_path_.emplace_back(cam0_calib_file_path);
+  camera_calib_file_path_.emplace_back(cam1_calib_file_path);
+  LOG(INFO) << "Cam0 calib file: " << cam0_calib_file_path;
+  LOG(INFO) << "Cam1 calib file: " << cam1_calib_file_path;
+}
+
 estimator::Estimator::Estimator()
 {
   USE_IMU = common::Setting::getSingleton()->Get<int>("imu");
   IMG0_TOPIC_NAME = common::Setting::getSingleton()->Get<std::string>("image0_topic");
   IMG1_TOPIC_NAME = common::Setting::getSingleton()->Get<std::string>("image1_topic");
   IMU_TOPIC_NAME = common::Setting::getSingleton()->Get<std::string>("imu_topic");
-  LOG(INFO)  << "IMG1 TOPIC: " << IMG1_TOPIC_NAME << ", IMG0 TOPIC: " << IMG1_TOPIC_NAME << ", IMU_TOPIC_NAME: " << IMU_TOPIC_NAME << ", USE_IMU:" << USE_IMU;
+  LOG(INFO) << "IMG1 TOPIC: " << IMG1_TOPIC_NAME << ", IMG0 TOPIC: " << IMG1_TOPIC_NAME
+            << ", IMU_TOPIC_NAME: " << IMU_TOPIC_NAME << ", USE_IMU:" << USE_IMU;
 
+  ReadImuCameraExternalParam();
   feature_tracker_ = std::make_shared<estimator::FeatureTracker>();
+  feature_tracker_->ReadIntrinsicParameter(camera_calib_file_path_);
+
   std::thread t_frontend_process = std::thread(&Estimator::tFrontendProcess, this);
   t_frontend_process.detach();
 }
@@ -48,7 +75,7 @@ void estimator::Estimator::tFrontendProcess()
       }
     }
     img_buf_mutex_.unlock();
-    if(!image0.empty() && !image1.empty())
+    if (!image0.empty() && !image1.empty())
     {
       ProcessImage(time, image0, image1);
     }
@@ -60,9 +87,11 @@ void estimator::Estimator::ProcessImage(double t, const cv::Mat &img0, const cv:
   input_image_cnt_++;
   std::map<int, std::vector<std::pair<int, Eigen::Matrix<double, 7, 1>>>> frame_feature;
   frame_feature = feature_tracker_->TrackImage(t, img0, img1);
-  if(input_image_cnt_ % 2 == 0)
+  if (input_image_cnt_ % 2 == 0)
   {
     std::unique_lock<std::mutex> lck(feature_buf_mutex_);
     feature_buf_.push(std::make_pair(t, frame_feature));
   }
 }
+
+}; // namespace estimator

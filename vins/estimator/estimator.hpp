@@ -3,6 +3,10 @@
 
 #include "estimator/feature_tracker.hpp"
 #include "common/utils.hpp"
+#include "Eigen/Core"
+#include <opencv2/opencv.hpp>
+#include <opencv2/core/eigen.hpp>
+#include "Eigen/Dense"
 #include <mutex>
 #include <sensor_msgs/Image.h>
 #include <queue>
@@ -16,7 +20,7 @@ public:
   Estimator();
   void tFrontendProcess();
   void ProcessImage(double t, const cv::Mat &img0, const cv::Mat &img1);
-
+  void ReadImuCameraExternalParam();
   void Image0Callback(const sensor_msgs::ImageConstPtr &img_msg)
   {
     std::unique_lock<std::mutex> lck(img_buf_mutex_);
@@ -36,12 +40,18 @@ private:
   std::queue<std::pair<double, std::map<int, std::vector<std::pair<int, Eigen::Matrix<double, 7, 1>>>>>> feature_buf_;
   std::queue<sensor_msgs::ImageConstPtr> img0_buf_, img1_buf_;
 
+  /// R_{imu,camera},t_{imu,camera}
+  Eigen::Matrix3d ric[2];
+  Eigen::Vector3d tic[2];
+
 public:
   std::mutex img_buf_mutex_;
   std::mutex feature_buf_mutex_;
+
 public:
   int USE_IMU = 0;
   std::string IMG0_TOPIC_NAME, IMG1_TOPIC_NAME, IMU_TOPIC_NAME;
+  std::vector<std::string> camera_calib_file_path_;
 };
 
 }; // namespace estimator
