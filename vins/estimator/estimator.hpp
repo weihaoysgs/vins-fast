@@ -20,8 +20,10 @@ public:
   Estimator();
   void tFrontendProcess();
   void tBackendProcess();
-  void ProcessImage(double t, const cv::Mat &img0, const cv::Mat &img1);
+  void FrontendTracker(double t, const cv::Mat &img0, const cv::Mat &img1);
   void ReadImuCameraExternalParam();
+  void ProcessImage(const std::map<int, std::vector<std::pair<int, Eigen::Matrix<double, 7, 1>>>> &image,
+                    const double time);
   void Image0Callback(const sensor_msgs::ImageConstPtr &img_msg)
   {
     std::unique_lock<std::mutex> lck(img_buf_mutex_);
@@ -44,6 +46,9 @@ private:
   /// R_{imu,camera},t_{imu,camera}
   Eigen::Matrix3d ric[2];
   Eigen::Vector3d tic[2];
+
+  double current_time_ = 0;
+  double time_diff = 0;
 
 public:
   std::mutex img_buf_mutex_;

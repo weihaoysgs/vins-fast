@@ -14,10 +14,14 @@ estimator/feature_tracker.hpp
 estimator/feature_tracker.cpp
 estimator/estimator.cpp
 estimator/estimator.hpp
+estimator/id_features.hpp
+estimator/frame_feature.hpp
+estimator/feature_manager.cpp
+estimator/feature_manager.hpp
 common/parameter.hpp
 common/parameter.cpp
 common/utils.hpp
-common/time_calculate.hpp 
+common/time_calculate.hpp
 )
 
 target_link_libraries(${PROJECT_NAME} glog gflags ${OpenCV_LIBS} ${catkin_LIBRARIES})

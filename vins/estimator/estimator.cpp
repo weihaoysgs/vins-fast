@@ -79,12 +79,12 @@ void Estimator::tFrontendProcess()
     img_buf_mutex_.unlock();
     if (!image0.empty() && !image1.empty())
     {
-      ProcessImage(time, image0, image1);
+      FrontendTracker(time, image0, image1);
     }
   }
 }
 
-void Estimator::ProcessImage(double t, const cv::Mat &img0, const cv::Mat &img1)
+void Estimator::FrontendTracker(double t, const cv::Mat &img0, const cv::Mat &img1)
 {
   input_image_cnt_++;
   std::map<int, std::vector<std::pair<int, Eigen::Matrix<double, 7, 1>>>> frame_feature;
@@ -100,10 +100,29 @@ void Estimator::tBackendProcess()
 {
   while (true)
   {
-    LOG(INFO) <<"Backend";
-    std::chrono::milliseconds dura(200);
+    std::pair<double, std::map<int, std::vector<std::pair<int, Eigen::Matrix<double, 7, 1>>>>> feature_frame;
+    if (!feature_buf_.empty())
+    {
+      feature_buf_mutex_.lock();
+      feature_frame = feature_buf_.front();
+      feature_buf_.pop();
+      feature_buf_mutex_.unlock();
+      current_time_ = feature_frame.first + time_diff;
+      ///////////////////////////
+      /// Get IMU data
+      ///////////////////////////
+      ProcessImage(feature_frame.second, current_time_);
+    }
+
+    std::chrono::milliseconds dura(2);
     std::this_thread::sleep_for(dura);
   }
+}
+
+void Estimator::ProcessImage(const std::map<int, std::vector<std::pair<int, Eigen::Matrix<double, 7, 1>>>> &image,
+                             const double time)
+{
+
 }
 
 }; // namespace estimator
