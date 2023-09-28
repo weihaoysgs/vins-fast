@@ -32,12 +32,13 @@ public:
     uv_right_.y() = point(4);
     velocity_right_.x() = point(5);
     velocity_right_.y() = point(6);
+    track_right_success_ = true;
   }
   double cur_td_;
   Eigen::Vector3d point_, point_right_;
   Eigen::Vector2d uv_, uv_right_;
   Eigen::Vector2d velocity_, velocity_right_;
-  bool is_stereo_ = true;
+  bool track_right_success_ = false;
 };
 } // namespace estimator
 

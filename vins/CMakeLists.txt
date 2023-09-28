@@ -22,6 +22,9 @@ common/parameter.hpp
 common/parameter.cpp
 common/utils.hpp
 common/time_calculate.hpp
+common/visualization.hpp
+common/visualization.cpp
+common/couttool.hpp
 )
 
 target_link_libraries(${PROJECT_NAME} glog gflags ${OpenCV_LIBS} ${catkin_LIBRARIES})

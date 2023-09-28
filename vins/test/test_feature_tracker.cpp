@@ -44,7 +44,7 @@ void GoWithRosBag(estimator::Estimator &vins_estimator)
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "vins_estimator");
+  ros::init(argc, argv, "vins_estimator_");
   ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Info);
 
   google::InitGoogleLogging("TestFeatureTracking");

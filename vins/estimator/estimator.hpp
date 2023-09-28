@@ -2,8 +2,10 @@
 #define ESTIMATOR_HPP
 
 #include "estimator/feature_tracker.hpp"
+#include "estimator/feature_manager.hpp"
 #include "common/utils.hpp"
 #include "Eigen/Core"
+#include "common/visualization.hpp"
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/eigen.hpp>
 #include "Eigen/Dense"
@@ -17,6 +19,19 @@ namespace estimator {
 class Estimator
 {
 public:
+  enum SolverFlag
+  {
+    INITIAL,
+    NON_LINEAR
+  };
+
+  enum MarginalizationFlag
+  {
+    MARGIN_OLD = 0,
+    MARGIN_SECOND_NEW = 1
+  };
+
+public:
   Estimator();
   void tFrontendProcess();
   void tBackendProcess();
@@ -24,6 +39,10 @@ public:
   void ReadImuCameraExternalParam();
   void ProcessImage(const std::map<int, std::vector<std::pair<int, Eigen::Matrix<double, 7, 1>>>> &image,
                     const double time);
+  void ClearState();
+  void SlideWindow();
+  void SlideWindowOld();
+  void SlideWindowNew();
   void Image0Callback(const sensor_msgs::ImageConstPtr &img_msg)
   {
     std::unique_lock<std::mutex> lck(img_buf_mutex_);
@@ -37,22 +56,40 @@ public:
   };
 
 private:
-  std::shared_ptr<estimator::FeatureTracker> feature_tracker_;
+  MarginalizationFlag marg_flag_;
+  SolverFlag solver_flag_;
+
+  std::shared_ptr<FeatureTracker> feature_tracker_;
+  std::shared_ptr<FeatureManager> feature_manager_;
+  std::shared_ptr<common::Visualization> visualization_;
+
+  static const int WINDOW_SIZE = 10;
   unsigned int input_image_cnt_{0};
+  int frame_count_ = 0;
+
   /// time:feature_per_frame
   std::queue<std::pair<double, std::map<int, std::vector<std::pair<int, Eigen::Matrix<double, 7, 1>>>>>> feature_buf_;
   std::queue<sensor_msgs::ImageConstPtr> img0_buf_, img1_buf_;
 
   /// R_{imu,camera},t_{imu,camera}
-  Eigen::Matrix3d ric[2];
-  Eigen::Vector3d tic[2];
+  Eigen::Matrix3d ric_[2];
+  Eigen::Vector3d tic_[2];
+  Eigen::Vector3d Ps_[(WINDOW_SIZE + 1)];
+  Eigen::Vector3d Vs_[(WINDOW_SIZE + 1)];
+  Eigen::Matrix3d Rs_[(WINDOW_SIZE + 1)];
+  Eigen::Vector3d Bas_[(WINDOW_SIZE + 1)];
+  Eigen::Vector3d Bgs_[(WINDOW_SIZE + 1)];
+  Eigen::Matrix3d back_R0_;
+  Eigen::Vector3d back_P0_;
+  double headers_[(WINDOW_SIZE + 1)];
+  double time_diff_ = 0;
+  double current_time_, previous_time_;
 
-  double current_time_ = 0;
-  double time_diff = 0;
-
+  cv::Mat current_img_;
 public:
   std::mutex img_buf_mutex_;
   std::mutex feature_buf_mutex_;
+  std::mutex current_img_mutex_;
 
 public:
   int USE_IMU = 0;

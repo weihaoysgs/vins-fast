@@ -14,6 +14,7 @@ FeatureTracker::FeatureTracker()
   FRONTEND_WAIT_KEY = common::Setting::getSingleton()->Get<int>("frontend_wait_key");
   LOG(INFO) << "MAX_CNT_FEATURES_PER_FRAME: " << MAX_CNT_FEATURES_PER_FRAME;
   LOG(INFO) << "OPTICAL_FLOW_BACK: " << OPTICAL_FLOW_BACK;
+  LOG(INFO) << "MIN_DIST: " << MIN_DIST;
 }
 
 bool FeatureTracker::InBorder(const cv::Point2f &pt, int row, int col)
@@ -78,14 +79,18 @@ FeatureTracker::TrackImage(double current_time, const cv::Mat &img0, const cv::M
   }
 
   /// extract new feature
+  cv::Mat mask;
+  /// set mask will reduce a little current kps
+  SetFeatureExtractorMask(mask);
   int new_feature_tobe_extract = MAX_CNT_FEATURES_PER_FRAME - static_cast<int>(current_kps_.size());
+
   std::vector<cv::Point2f> new_feature_pts;
   if (new_feature_tobe_extract > 0)
   {
-    cv::Mat mask;
-    SetFeatureExtractorMask(mask);
     cv::goodFeaturesToTrack(current_img_, new_feature_pts, new_feature_tobe_extract, 0.01, MIN_DIST, mask);
   }
+
+  // assert(new_feature_tobe_extract + current_kps_.size() == MAX_CNT_FEATURES_PER_FRAME);
 
   /// add new feature
   for (auto &pt : new_feature_pts)
@@ -139,9 +144,15 @@ FeatureTracker::TrackImage(double current_time, const cv::Mat &img0, const cv::M
 
   if (SHOW_TRACK_RESULT)
   {
-    DrawTracker();
-    cv::imshow("draw tracker", draw_track_img_result_);
-    cv::waitKey(FRONTEND_WAIT_KEY);
+    {
+      std::unique_lock<std::mutex> lck(draw_track_img_mutex_);
+      DrawTracker();
+    }
+    if (FRONTEND_WAIT_KEY == 0)
+    {
+      cv::imshow("draw tracker", draw_track_img_result_);
+      cv::waitKey(FRONTEND_WAIT_KEY);
+    }
   }
 
   previous_left_ids_kps_map_.clear();
@@ -226,9 +237,9 @@ void FeatureTracker::SetFeatureExtractorMask(cv::Mat &mask)
   {
     if (mask.at<uchar>(it.second.first) == 255)
     {
-      current_kps_.emplace_back(it.second.first);
-      ids_.emplace_back(it.second.second);
-      track_count_.emplace_back(it.first);
+      current_kps_.push_back(it.second.first);
+      ids_.push_back(it.second.second);
+      track_count_.push_back(it.first);
       cv::circle(mask, it.second.first, MIN_DIST, 0, -1);
     }
   }
@@ -436,4 +447,10 @@ void FeatureTracker::DrawIdsTrackCount(int wait_key)
   cv::waitKey(wait_key);
   // clang-format on
 }
+cv::Mat FeatureTracker::getDrawTrackResultImg()
+{
+  std::unique_lock<std::mutex> lck(draw_track_img_mutex_);
+  return draw_track_img_result_;
+}
+
 } // namespace estimator

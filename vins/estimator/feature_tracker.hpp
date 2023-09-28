@@ -4,6 +4,7 @@
 #include <map>
 #include <vector>
 #include <cassert>
+#include <mutex>
 #include "Eigen/Core"
 #include "Eigen/Dense"
 #include <opencv2/opencv.hpp>
@@ -29,13 +30,13 @@ public:
                     std::vector<cv::Point2f> &kps_velocity, std::vector<cv::Point2f> &kps, const std::string &name);
   void DrawTracker();
   void ShowUnDistortion();
-  void DrawVelocityLeft();
-  void DrawVelocityRight();
+  cv::Mat getCurrentImage() const { return current_img_; }
+  cv::Mat getPreviousImage() const { return previous_img_; }
   void ReadIntrinsicParameter(const std::vector<std::string> &calib_file_path);
   void DrawIdsTrackCount(int wait_key);
   void DrawTrackResultWithLine(int wait_key);
   void SetFeatureExtractorMask(cv::Mat &mask);
-  cv::Mat getDrawTrackResultImg() const { return draw_track_img_result_; }
+  cv::Mat getDrawTrackResultImg();
   double PtDistance(cv::Point2f &pt1, cv::Point2f &pt2)
   {
     double dx = pt1.x - pt2.x;
@@ -58,6 +59,8 @@ public:
   int MIN_DIST; /// min distance between two features
   int SHOW_TRACK_RESULT;
   int FRONTEND_WAIT_KEY;
+public:
+  std::mutex draw_track_img_mutex_;
 
 private:
   unsigned int landmark_id_ = 0;
