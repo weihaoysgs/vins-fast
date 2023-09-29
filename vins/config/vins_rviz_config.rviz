@@ -25,7 +25,7 @@ Panels:
   - Class: rviz/Time
     Name: Time
     SyncMode: 0
-    SyncSource: Image
+    SyncSource: ""
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -98,7 +98,7 @@ Visualization Manager:
       Value: true
   Enabled: true
   Global Options:
-    Background Color: 48; 48; 48
+    Background Color: 0; 0; 0
     Default Light: true
     Fixed Frame: world
     Frame Rate: 30
@@ -142,7 +142,7 @@ Visualization Manager:
       Near Clip Distance: 0.009999999776482582
       Pitch: 0.7003983855247498
       Target Frame: <Fixed Frame>
-      Yaw: 4.5935492515563965
+      Yaw: 4.5985493659973145
     Saved: ~
 Window Geometry:
   Displays:
