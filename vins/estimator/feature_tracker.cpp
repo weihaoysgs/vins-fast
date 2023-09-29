@@ -447,10 +447,18 @@ void FeatureTracker::DrawIdsTrackCount(int wait_key)
   cv::waitKey(wait_key);
   // clang-format on
 }
+
 cv::Mat FeatureTracker::getDrawTrackResultImg()
 {
   std::unique_lock<std::mutex> lck(draw_track_img_mutex_);
   return draw_track_img_result_;
+}
+
+double FeatureTracker::PtDistance(cv::Point2f &pt1, cv::Point2f &pt2) const
+{
+  double dx = pt1.x - pt2.x;
+  double dy = pt1.y - pt2.y;
+  return sqrt(dx * dx + dy * dy);
 }
 
 } // namespace estimator

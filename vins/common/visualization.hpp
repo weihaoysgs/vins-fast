@@ -24,7 +24,7 @@ public:
     ros::NodeHandle n("~");
     pub_path_ = n.advertise<nav_msgs::Path>("path", 1000);
     pub_track_img_ = n.advertise<sensor_msgs::Image>("track_image", 1000);
-    pub_point_cloud_ = n.advertise<sensor_msgs::PointCloud>("track_image", 1000);
+    pub_point_cloud_ = n.advertise<sensor_msgs::PointCloud>("point_cloud", 1000);
     path_.header.frame_id = "world";
   }
 

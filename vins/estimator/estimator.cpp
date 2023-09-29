@@ -176,9 +176,7 @@ void Estimator::ProcessImage(const std::map<int, std::vector<std::pair<int, Eige
       /// 得到了两帧的位姿了，那么就可以三角化同时被这两帧看到的特征点了,注意当前帧新提取的仍然不能被三角化
       feature_manager_->TriangulatePts(Ps_, Rs_, tic_, ric_);
       // LOG(INFO) << "P: " << Ps_[frame_count_].transpose();
-      // int triangulate_num = feature_manager_->getTriangulatedLandmarkNum();
-      // int track_right_success_num = feature_manager_->getRightObservedNumber();
-      // LOG(INFO) << "triangulate point size: " << triangulate_num << "; " << track_right_success_num;
+
       visualization_->PublishPath(Ps_, Rs_, WINDOW_SIZE);
 
       if (frame_count_ == WINDOW_SIZE)

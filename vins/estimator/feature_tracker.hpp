@@ -18,32 +18,59 @@ namespace estimator {
 class FeatureTracker
 {
 public:
+  /// @brief constructor function
   FeatureTracker();
+
+  /// @brief Main process image fun
   std::map<int, std::vector<std::pair<int, Eigen::Matrix<double, 7, 1>>>>
   TrackImage(double current_time, const cv::Mat &img0, const cv::Mat &img1 = cv::Mat());
+
+  /// @brief Check the pts in image
   bool InBorder(const cv::Point2f &pt, int row, int col);
+
+  /// @brief Remove the distortion
   std::vector<cv::Point2f> RemoveDistortion(std::vector<cv::Point2f> &src_pts, camodocal::CameraPtr cam);
+
+  /// @brief Compute the kps velocity
   std::vector<cv::Point2f> ComputeKpsVelocity(std::vector<int> &ids, std::vector<cv::Point2f> &un_distortion_kps,
                                               std::map<int, cv::Point2f> &current_id_pts,
                                               std::map<int, cv::Point2f> &previous_id_pts);
+
+  /// @brief Draw the kps velocity
   void DrawVelocity(const cv::Mat &img, const std::vector<int> &ids, const std::vector<int> &track_count,
                     std::vector<cv::Point2f> &kps_velocity, std::vector<cv::Point2f> &kps, const std::string &name);
-  void DrawTracker();
-  void ShowUnDistortion();
-  cv::Mat getCurrentImage() const { return current_img_; }
-  cv::Mat getPreviousImage() const { return previous_img_; }
-  void ReadIntrinsicParameter(const std::vector<std::string> &calib_file_path);
-  void DrawIdsTrackCount(int wait_key);
-  void DrawTrackResultWithLine(int wait_key);
-  void SetFeatureExtractorMask(cv::Mat &mask);
-  cv::Mat getDrawTrackResultImg();
-  double PtDistance(cv::Point2f &pt1, cv::Point2f &pt2)
-  {
-    double dx = pt1.x - pt2.x;
-    double dy = pt1.y - pt2.y;
-    return sqrt(dx * dx + dy * dy);
-  }
 
+  /// @brief Draw tracker result
+  void DrawTracker();
+
+  /// @brief Show un distortion result, the calculation is complex
+  void ShowUnDistortion();
+
+  /// @brief Get current image, TODO: not using
+  cv::Mat getCurrentImage() const { return current_img_; }
+
+  /// @brief Get previous image, TODO: not using
+  cv::Mat getPreviousImage() const { return previous_img_; }
+
+  /// @brief Read camera intrinsic param
+  void ReadIntrinsicParameter(const std::vector<std::string> &calib_file_path);
+
+  /// @brief Draw image track count num
+  void DrawIdsTrackCount(int wait_key);
+
+  /// @brief Draw track result with line
+  void DrawTrackResultWithLine(int wait_key);
+
+  /// @brief Set feature extractor mask
+  void SetFeatureExtractorMask(cv::Mat &mask);
+
+  /// @brief Get draw tracker result image to show
+  cv::Mat getDrawTrackResultImg();
+
+  /// @brief Compute distance between two cv points
+  double PtDistance(cv::Point2f &pt1, cv::Point2f &pt2) const;
+
+  /// @brief Template fun, reduce the vector according the status
   template <typename T, typename S> void ReduceVector(std::vector<T> &v, const std::vector<S> &status)
   {
     int j = 0;

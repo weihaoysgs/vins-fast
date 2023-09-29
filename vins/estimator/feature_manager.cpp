@@ -149,7 +149,6 @@ void FeatureManager::InitFramePoseByPnP(int frame_cnt, Eigen::Vector3d *Ps, Eige
     /// R_wc -> R_wi; P_wc -> P_wi
     Rs[frame_cnt] = RCam * ric[0].transpose();
     Ps[frame_cnt] = -RCam * ric[0].transpose() * tic[0] + PCam;
-    LOG(INFO) << "P: " << Ps[frame_cnt].transpose();
   }
   else
   {
@@ -452,4 +451,11 @@ void FeatureManager::RemoveOutlier(std::set<int> &outlierIndex)
   }
 }
 
+int FeatureManager::getTriangulatedLandmarkNum() const
+{
+  int num = std::count_if(features_.begin(), features_.end(), [](const IDWithObservedFeatures &fea) -> bool {
+    return fea.estimated_depth_ >= 0;
+  });
+  return num;
+}
 } // namespace estimator
