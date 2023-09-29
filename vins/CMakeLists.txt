@@ -3,7 +3,7 @@ project(vins)
 
 #set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_FLAGS "-w")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -g -ggdb ${CMAKE_CXX_FLAGS} -lpthread")
 set(CMAKE_CXX_FLAGS_DEBUG "-g ${CMAKE_CXX_FLAGS}")
@@ -25,6 +25,15 @@ common/time_calculate.hpp
 common/visualization.hpp
 common/visualization.cpp
 common/couttool.hpp
+common/algorithm.hpp
+factor/pose_local_parameterization.cpp
+factor/pose_local_parameterization.hpp
+factor/projection2frame1camera_factor.hpp
+factor/projection2frame1camera_factor.cpp
+factor/projection1frame1camera_factor.cpp
+factor/projection1frame1camera_factor.hpp
+factor/projection2frame2camera_factor.cpp
+factor/projection2frame2camera_factor.hpp
 )
 
 target_link_libraries(${PROJECT_NAME} glog gflags ${OpenCV_LIBS} ${catkin_LIBRARIES})
