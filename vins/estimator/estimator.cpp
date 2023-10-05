@@ -2,43 +2,11 @@
 
 namespace estimator {
 
-void Estimator::ReadImuCameraExternalParam()
-{
-  cv::Mat cv_T_0, cv_T_1;
-  Eigen::Matrix4d T0, T1;
-  common::Setting::getSingleton()->getFile()["body_T_cam0"] >> cv_T_0;
-  cv::cv2eigen(cv_T_0, T0);
-  ric_[0] = T0.block<3, 3>(0, 0);
-  tic_[0] = T0.block<3, 1>(0, 3);
-  common::Setting::getSingleton()->getFile()["body_T_cam1"] >> cv_T_1;
-  cv::cv2eigen(cv_T_1, T1);
-  ric_[1] = T1.block<3, 3>(0, 0);
-  tic_[1] = T1.block<3, 1>(0, 3);
-  LOG(INFO) << "Cam0 R:\n" << ric_[0] << "\n t: " << tic_[0].transpose();
-  LOG(INFO) << "Cam1 R:\n" << ric_[1] << "\n t: " << tic_[1].transpose();
-
-  std::string cam0_calib_file_path = common::Setting::getSingleton()->Get<std::string>("cam0_calib");
-  std::string cam1_calib_file_path = common::Setting::getSingleton()->Get<std::string>("cam1_calib");
-  assert(common::FileExists(cam0_calib_file_path) && common::FileExists(cam1_calib_file_path));
-  camera_calib_file_path_.emplace_back(cam0_calib_file_path);
-  camera_calib_file_path_.emplace_back(cam1_calib_file_path);
-  LOG(INFO) << "Cam0 calib file: " << cam0_calib_file_path;
-  LOG(INFO) << "Cam1 calib file: " << cam1_calib_file_path;
-}
-
 Estimator::Estimator()
 {
   /// first call to clear member variable value
   ClearState();
-
-  USE_IMU = common::Setting::getSingleton()->Get<int>("imu");
-  IMG0_TOPIC_NAME = common::Setting::getSingleton()->Get<std::string>("image0_topic");
-  IMG1_TOPIC_NAME = common::Setting::getSingleton()->Get<std::string>("image1_topic");
-  IMU_TOPIC_NAME = common::Setting::getSingleton()->Get<std::string>("imu_topic");
-  LOG(INFO) << "IMG1 TOPIC: " << IMG1_TOPIC_NAME << ", IMG0 TOPIC: " << IMG1_TOPIC_NAME
-            << ", IMU_TOPIC_NAME: " << IMU_TOPIC_NAME << ", USE_IMU:" << USE_IMU << ", WINDOW_SIZE:" << WINDOW_SIZE;
-
-  ReadImuCameraExternalParam();
+  SetParameter();
 
   visualization_ = std::make_shared<common::Visualization>();
 
@@ -77,6 +45,43 @@ void Estimator::ClearState()
     Bas_[i].setZero();
     Bgs_[i].setZero();
   }
+}
+
+void Estimator::SetParameter()
+{
+  USE_IMU = common::Setting::getSingleton()->Get<int>("imu");
+  IMG0_TOPIC_NAME = common::Setting::getSingleton()->Get<std::string>("image0_topic");
+  IMG1_TOPIC_NAME = common::Setting::getSingleton()->Get<std::string>("image1_topic");
+  IMU_TOPIC_NAME = common::Setting::getSingleton()->Get<std::string>("imu_topic");
+  LOG(INFO) << "IMG1 TOPIC: " << IMG1_TOPIC_NAME << ", IMG0 TOPIC: " << IMG1_TOPIC_NAME
+            << ", IMU_TOPIC_NAME: " << IMU_TOPIC_NAME << ", USE_IMU:" << USE_IMU << ", WINDOW_SIZE:" << WINDOW_SIZE;
+
+  ReadImuCameraExternalParam();
+  factor::ProjectionTwoFrameOneCamFactor::sqrt_info_ = 460.0 / 1.5 * Eigen::Matrix2d::Identity();
+}
+
+void Estimator::ReadImuCameraExternalParam()
+{
+  cv::Mat cv_T_0, cv_T_1;
+  Eigen::Matrix4d T0, T1;
+  common::Setting::getSingleton()->getFile()["body_T_cam0"] >> cv_T_0;
+  cv::cv2eigen(cv_T_0, T0);
+  ric_[0] = T0.block<3, 3>(0, 0);
+  tic_[0] = T0.block<3, 1>(0, 3);
+  common::Setting::getSingleton()->getFile()["body_T_cam1"] >> cv_T_1;
+  cv::cv2eigen(cv_T_1, T1);
+  ric_[1] = T1.block<3, 3>(0, 0);
+  tic_[1] = T1.block<3, 1>(0, 3);
+  LOG(INFO) << "Cam0 R:\n" << ric_[0] << "\n t: " << tic_[0].transpose();
+  LOG(INFO) << "Cam1 R:\n" << ric_[1] << "\n t: " << tic_[1].transpose();
+
+  std::string cam0_calib_file_path = common::Setting::getSingleton()->Get<std::string>("cam0_calib");
+  std::string cam1_calib_file_path = common::Setting::getSingleton()->Get<std::string>("cam1_calib");
+  assert(common::FileExists(cam0_calib_file_path) && common::FileExists(cam1_calib_file_path));
+  camera_calib_file_path_.emplace_back(cam0_calib_file_path);
+  camera_calib_file_path_.emplace_back(cam1_calib_file_path);
+  LOG(INFO) << "Cam0 calib file: " << cam0_calib_file_path;
+  LOG(INFO) << "Cam1 calib file: " << cam1_calib_file_path;
 }
 
 void Estimator::tFrontendProcess()
@@ -152,6 +157,11 @@ void Estimator::tBackendProcess()
       ///////////////////////////
       ProcessImage(feature_frame.second, current_time_);
 
+      std_msgs::Header header;
+      header.frame_id = "world";
+      header.stamp = ros::Time(feature_frame.first);
+
+      visualization_->PublishPath(header.stamp.toSec(), Ps_, Rs_, WINDOW_SIZE);
       visualization_->PublishTrackImage(feature_tracker_->getDrawTrackResultImg(), current_time_);
     }
 
@@ -175,9 +185,7 @@ void Estimator::ProcessImage(const std::map<int, std::vector<std::pair<int, Eige
       feature_manager_->InitFramePoseByPnP(frame_count_, Ps_, Rs_, tic_, ric_);
       /// 得到了两帧的位姿了，那么就可以三角化同时被这两帧看到的特征点了,注意当前帧新提取的仍然不能被三角化
       feature_manager_->TriangulatePts(Ps_, Rs_, tic_, ric_);
-      // LOG(INFO) << "P: " << Ps_[frame_count_].transpose();
-
-      visualization_->PublishPath(Ps_, Rs_, WINDOW_SIZE);
+      Optimization();
 
       if (frame_count_ == WINDOW_SIZE)
       {
@@ -202,12 +210,13 @@ void Estimator::ProcessImage(const std::map<int, std::vector<std::pair<int, Eige
   {
     feature_manager_->InitFramePoseByPnP(frame_count_, Ps_, Rs_, tic_, ric_);
     feature_manager_->TriangulatePts(Ps_, Rs_, tic_, ric_);
+    
+    Optimization();
     std::set<int> remove_ids;
     feature_manager_->OutliersRejection(remove_ids, Rs_, Ps_, ric_, tic_);
     feature_manager_->RemoveOutlier(remove_ids);
 
     SlideWindow();
-    visualization_->PublishPath(Ps_, Rs_, WINDOW_SIZE);
   }
 }
 void Estimator::SlideWindow()
@@ -259,9 +268,130 @@ void Estimator::SlideWindowOld()
     feature_manager_->RemoveBack();
   }
 }
+
 void Estimator::SlideWindowNew()
 {
   feature_manager_->RemoveFront(frame_count_, WINDOW_SIZE);
+}
+
+void Estimator::Optimization()
+{
+  vector2double();
+  ceres::Problem problem;
+  ceres::LossFunction *loss_function = new ceres::HuberLoss(1.0);
+  for (int i = 0; i < frame_count_ + 1; i++)
+  {
+    ceres::LocalParameterization *local_pose_parameter = new factor::PoseLocalParameterization();
+    problem.AddParameterBlock(param_pose_[i], SIZE_POSE, local_pose_parameter);
+  }
+
+  {
+    problem.SetParameterBlockConstant(param_pose_[0]);
+  }
+
+  for (auto & ex_pose_ : param_ex_pose_)
+  {
+    ceres::LocalParameterization *local_cam_pose_parameter = new factor::PoseLocalParameterization();
+    problem.AddParameterBlock(ex_pose_, SIZE_POSE, local_cam_pose_parameter);
+    {
+      problem.SetParameterBlockConstant(ex_pose_);
+    }
+  }
+
+  problem.AddParameterBlock(param_td_[0], 1);
+  {
+    problem.SetParameterBlockConstant(param_td_[0]);
+  }
+
+  int feature_index = -1;
+  for (auto &id_observed_feature : feature_manager_->getFeatures())
+  {
+    id_observed_feature.used_num_ = id_observed_feature.feature_per_frame_.size();
+    if (id_observed_feature.used_num_ < 4)
+      continue;
+    ++feature_index;
+    int window_i = id_observed_feature.start_frame_, window_j = window_i - 1;
+
+    Eigen::Vector3d pts_i = id_observed_feature.feature_per_frame_[0].point_;
+
+    for (auto &id_per_frame : id_observed_feature.feature_per_frame_)
+    {
+      window_j++;
+      if (window_i != window_j)
+      {
+        // clang-format off
+        Eigen::Vector3d pts_j = id_per_frame.point_;
+        auto *residual_block = new factor::ProjectionTwoFrameOneCamFactor(pts_i, pts_j, id_observed_feature.feature_per_frame_[0].velocity_,
+                                    id_per_frame.velocity_, id_observed_feature.feature_per_frame_[0].cur_td_, id_per_frame.cur_td_);
+        problem.AddResidualBlock(residual_block, loss_function, param_pose_[window_i], param_pose_[window_j], param_ex_pose_[0],
+                                 param_feature_[feature_index], param_td_[0]);
+        // clang-format on
+      }
+    }
+  }
+
+  ceres::Solver::Options options;
+  options.linear_solver_type = ceres::DENSE_SCHUR;
+  options.trust_region_strategy_type = ceres::DOGLEG;
+  options.max_num_iterations = 8;
+  options.max_solver_time_in_seconds = 0.04;
+
+  ceres::Solver::Summary summary;
+  ceres::Solve(options, &problem, &summary);
+  double2vector();
+}
+
+void Estimator::vector2double()
+{
+  for (int i = 0; i <= WINDOW_SIZE; i++)
+  {
+    param_pose_[i][0] = Ps_[i].x();
+    param_pose_[i][1] = Ps_[i].y();
+    param_pose_[i][2] = Ps_[i].z();
+    Eigen::Quaterniond q{Rs_[i]};
+    param_pose_[i][3] = q.x();
+    param_pose_[i][4] = q.y();
+    param_pose_[i][5] = q.z();
+    param_pose_[i][6] = q.w();
+  }
+  for (int i = 0; i < 2; i++)
+  {
+    param_ex_pose_[i][0] = tic_[i].x();
+    param_ex_pose_[i][1] = tic_[i].y();
+    param_ex_pose_[i][2] = tic_[i].z();
+    Eigen::Quaterniond q{ric_[i]};
+    param_ex_pose_[i][3] = q.x();
+    param_ex_pose_[i][4] = q.y();
+    param_ex_pose_[i][5] = q.z();
+    param_ex_pose_[i][6] = q.w();
+  }
+
+  Eigen::VectorXd dep = feature_manager_->getDepthVector();
+  for (int i = 0; i < feature_manager_->getFeatureCount(); i++)
+    param_feature_[i][0] = dep(i);
+
+  param_td_[0][0] = time_diff_;
+}
+
+void Estimator::double2vector()
+{
+  /// 优化前的旋转和位置
+  Eigen::Vector3d origin_R0 = common::Algorithm::R2ypr(Rs_[0]);
+  Eigen::Vector3d origin_P0 = Ps_[0];
+  {
+    for (int i = 0; i <= WINDOW_SIZE; i++)
+    {
+      Rs_[i] = Eigen::Quaterniond(param_pose_[i][6], param_pose_[i][3], param_pose_[i][4], param_pose_[i][5])
+                   .normalized()
+                   .toRotationMatrix();
+      Ps_[i] = Eigen::Vector3d(param_pose_[i][0], param_pose_[i][1], param_pose_[i][2]);
+    }
+  }
+
+  Eigen::VectorXd dep = feature_manager_->getDepthVector();
+  for (int i = 0; i < feature_manager_->getFeatureCount(); i++)
+    dep(i) = param_feature_[i][0];
+  feature_manager_->setDepth(dep);
 }
 
 }; // namespace estimator

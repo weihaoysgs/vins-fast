@@ -43,6 +43,14 @@ public:
   /// @brief Triangulate all pts in window
   void TriangulatePts(Eigen::Vector3d Ps[], Eigen::Matrix3d Rs[], Eigen::Vector3d tic[], Eigen::Matrix3d ric[]);
 
+  /// @brief get triangulated pts inverse depth
+  Eigen::VectorXd getDepthVector();
+
+  void setDepth(const Eigen::VectorXd &x);
+
+  /// @brief get number of userful landmarks
+  int getFeatureCount();
+
   /// @brief Triangulate one point
   void TriangulateOnePoint(Eigen::Matrix<double, 3, 4> &, Eigen::Matrix<double, 3, 4> &, Eigen::Vector2d &point0,
                            Eigen::Vector2d &point1, Eigen::Vector3d &point_3d);
@@ -70,7 +78,7 @@ public:
   void RemoveOutlier(std::set<int> &outlier_index);
 
   /// @brief Get all landmark in window
-  const std::list<IDWithObservedFeatures> &getFeatures() const { return features_; }
+  std::list<IDWithObservedFeatures> &getFeatures() { return features_; }
 
   int getTriangulatedLandmarkNum() const;
 
@@ -80,8 +88,8 @@ public:
   const double INIT_DEPTH = 5.0;
 
 private:
-  int last_track_num_ = 0;
   std::list<IDWithObservedFeatures> features_;
+  int last_track_num_ = 0;
   Eigen::Matrix3d ric_[2];
 };
 

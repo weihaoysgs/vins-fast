@@ -4,12 +4,16 @@
 #include "estimator/feature_tracker.hpp"
 #include "estimator/feature_manager.hpp"
 #include "common/utils.hpp"
+#include "factor/pose_local_parameterization.hpp"
+#include "factor/projection2frame1camera_factor.hpp"
+#include "common/size_pose_param.hpp"
 #include "Eigen/Core"
 #include "common/visualization.hpp"
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/eigen.hpp>
 #include "Eigen/Dense"
 #include <mutex>
+#include <ceres/problem.h>
 #include <sensor_msgs/Image.h>
 #include <queue>
 #include <thread>
@@ -40,9 +44,13 @@ public:
   void ProcessImage(const std::map<int, std::vector<std::pair<int, Eigen::Matrix<double, 7, 1>>>> &image,
                     const double time);
   void ClearState();
+  void SetParameter();
+  void Optimization();
   void SlideWindow();
   void SlideWindowOld();
   void SlideWindowNew();
+  void vector2double();
+  void double2vector();
   void Image0Callback(const sensor_msgs::ImageConstPtr &img_msg)
   {
     std::unique_lock<std::mutex> lck(img_buf_mutex_);
@@ -84,6 +92,11 @@ private:
   double headers_[(WINDOW_SIZE + 1)];
   double time_diff_ = 0;
   double current_time_, previous_time_;
+
+  double param_pose_[WINDOW_SIZE + 1][SIZE_POSE];
+  double param_feature_[1000][SIZE_FEATURE];
+  double param_ex_pose_[2][SIZE_POSE];
+  double param_td_[1][1];
 
   cv::Mat current_img_;
 public:

@@ -458,4 +458,55 @@ int FeatureManager::getTriangulatedLandmarkNum() const
   });
   return num;
 }
+
+int FeatureManager::getFeatureCount()
+{
+  int cnt = 0;
+  for (auto &it : features_)
+  {
+    /// 这里机会改变 it.used_num 这个值，但是也就是和后面的 size() 值是相等的，其实也用不上这个值
+    it.used_num_ = it.feature_per_frame_.size();
+    if (it.used_num_ >= 4)
+    {
+      cnt++;
+    }
+  }
+  return cnt;
+}
+
+Eigen::VectorXd FeatureManager::getDepthVector()
+{
+  Eigen::VectorXd dep_vec(getFeatureCount());
+  int feature_index = -1;
+  for (auto &it_per_id : features_)
+  {
+    it_per_id.used_num_ = it_per_id.feature_per_frame_.size();
+    if (it_per_id.used_num_ < 4)
+      continue;
+    dep_vec(++feature_index) = 1. / it_per_id.estimated_depth_;
+  }
+  return dep_vec;
+}
+
+void FeatureManager::setDepth(const Eigen::VectorXd &x)
+{
+  int feature_index = -1;
+  for (auto &it_per_id : features_)
+  {
+    it_per_id.used_num_ = it_per_id.feature_per_frame_.size();
+    if (it_per_id.used_num_ < 4)
+      continue;
+
+    it_per_id.estimated_depth_ = 1.0 / x(++feature_index);
+    if (it_per_id.estimated_depth_ < 0)
+    {
+      it_per_id.solve_flag_ = 2;
+    }
+    else
+    {
+      it_per_id.solve_flag_ = 1;
+    }
+  }
+}
+
 } // namespace estimator
