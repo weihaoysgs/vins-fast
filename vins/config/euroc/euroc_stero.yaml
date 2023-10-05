@@ -8,6 +8,7 @@ imu_topic: "/imu0"
 image0_topic: "/cam0/image_raw"
 image1_topic: "/cam1/image_raw"
 output_path: "/home/weihao/codespace/whvio_ws/output/"
+output_file_name: "vio.txt"
 
 ros_bag_path: "/home/weihao/dataset/euroc/MH_05_difficult_copy.bag"
 
