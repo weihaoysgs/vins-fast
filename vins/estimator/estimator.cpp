@@ -251,6 +251,7 @@ void Estimator::SlideWindow()
     }
   }
 }
+
 void Estimator::SlideWindowOld()
 {
   if (solver_flag_ == NON_LINEAR)
