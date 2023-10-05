@@ -5,7 +5,7 @@
 
 namespace common {
 
-void Visualization::PublishPath(const Eigen::Vector3d *Ps, const Eigen::Matrix3d *Rs, int WINDOW_SIZE)
+void Visualization::PublishPath(double timestamp, const Eigen::Vector3d *Ps, const Eigen::Matrix3d *Rs, int WINDOW_SIZE)
 {
   Eigen::Quaterniond tmp_Q = Eigen::Quaterniond(Rs[WINDOW_SIZE]);
   geometry_msgs::PoseStamped pose;
@@ -19,6 +19,18 @@ void Visualization::PublishPath(const Eigen::Vector3d *Ps, const Eigen::Matrix3d
 
   path_.poses.push_back(pose);
   pub_path_.publish(path_);
+  {
+    /// write result to file
+    std::string VINS_RESULT_PATH = vins_result_path_ + vins_result_file_name_;
+    std::ofstream f_out(VINS_RESULT_PATH, std::ios::app);
+    f_out.setf(std::ios::fixed, std::ios::floatfield);
+    f_out.precision(9);
+    f_out << timestamp << " ";
+    f_out.precision(5);
+    f_out << Ps[WINDOW_SIZE].x() << " " << Ps[WINDOW_SIZE].y() << " " << Ps[WINDOW_SIZE].z() << " " << tmp_Q.w() << " "
+          << tmp_Q.x() << " " << tmp_Q.y() << " " << tmp_Q.z() << std::endl;
+    f_out.close();
+  }
 }
 void Visualization::PublishTrackImage(const cv::Mat &image, double t)
 {
@@ -28,7 +40,5 @@ void Visualization::PublishTrackImage(const cv::Mat &image, double t)
   sensor_msgs::ImagePtr img_track_msg = cv_bridge::CvImage(header, "bgr8", image).toImageMsg();
   pub_track_img_.publish(img_track_msg);
 }
-void Visualization::PublishPointCloud(double t) {
-
-}
+void Visualization::PublishPointCloud(double t) { }
 } // namespace common
