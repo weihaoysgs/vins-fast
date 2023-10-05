@@ -17,7 +17,7 @@ common/parameter.cpp
 common/visualization.cpp
 factor/pose_local_parameterization.cpp
 factor/projection2frame1camera_factor.cpp
-factor/projection1frame1camera_factor.cpp
+factor/projection1frame2camera_factor.cpp
 factor/projection2frame2camera_factor.cpp
 )
 
