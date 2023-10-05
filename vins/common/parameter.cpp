@@ -5,4 +5,5 @@
 
 namespace common {
 std::shared_ptr<Setting> Setting::singleton_ = nullptr;
+std::mutex Setting::singleton_mutex_;
 } // namespace common
