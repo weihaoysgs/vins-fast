@@ -49,6 +49,7 @@ public:
   void ClearState();
   void SetParameter();
   void Optimization();
+  void PrepareMarginalizationFactor();
   void SlideWindow();
   void SlideWindowOld();
   void SlideWindowNew();
@@ -69,6 +70,8 @@ public:
 private:
   MarginalizationFlag marg_flag_;
   SolverFlag solver_flag_;
+  factor::MarginalizationInfo *last_marginalization_info_ = nullptr;
+  std::vector<double *> last_marginalization_parameter_blocks_;
 
   std::shared_ptr<FeatureTracker> feature_tracker_;
   std::shared_ptr<FeatureManager> feature_manager_;

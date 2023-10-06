@@ -7,12 +7,12 @@ namespace factor {
 void MargResidualBlockInfo::Evaluate()
 {
   residuals_.resize(cost_function_->num_residuals());
-  std::vector<int> parameter_block_size = cost_function_->parameter_block_sizes();
-  raw_jacobi_ = new double *[parameter_block_size.size()];
-  jacobi_.resize(parameter_block_size.size());
-  for (int i = 0; i < parameter_block_size.size(); i++)
+  std::vector<int> block_sizes = cost_function_->parameter_block_sizes();
+  raw_jacobi_ = new double *[block_sizes.size()];
+  jacobi_.resize(block_sizes.size());
+  for (int i = 0; i < static_cast<int>(block_sizes.size()); i++)
   {
-    jacobi_[i].resize(cost_function_->num_residuals(), parameter_block_size[i]);
+    jacobi_[i].resize(cost_function_->num_residuals(), block_sizes[i]);
     raw_jacobi_[i] = jacobi_[i].data();
   }
   /// [residuals_] and [raw_jacobi_] is empty, and [raw_jacobi_] is equal to [jacobi_]

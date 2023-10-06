@@ -19,8 +19,8 @@ struct MargResidualBlockInfo
                         std::vector<double *> parameter_blocks, std::vector<int> drop_set)
     : cost_function_(cost_function)
     , loss_function_(loss_function)
-    , parameter_blocks_(std::move(parameter_blocks))
-    , drop_set_(std::move(drop_set)){};
+    , parameter_blocks_(parameter_blocks)
+    , drop_set_(drop_set){};
   void Evaluate();
 
   ceres::CostFunction *cost_function_;
@@ -30,7 +30,7 @@ struct MargResidualBlockInfo
   double **raw_jacobi_;
   std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> jacobi_;
   Eigen::VectorXd residuals_;
-
+  std::string residual_block_name_ = "other";
   int LocalSize(int size) { return size == 7 ? 6 : size; }
 };
 

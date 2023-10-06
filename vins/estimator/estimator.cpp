@@ -306,6 +306,14 @@ void Estimator::Optimization()
     problem.SetParameterBlockConstant(param_td_[0]);
   }
 
+  if (last_marginalization_info_ && last_marginalization_info_->valid_)
+  {
+    // construct new marginalization_factor
+    auto *marginalization_factor = new factor::MarginalizationFactor(last_marginalization_info_);
+    problem.AddResidualBlock(marginalization_factor, nullptr,
+                             last_marginalization_parameter_blocks_);
+  }
+
   int feature_index = -1;
   for (auto &id_observed_feature : feature_manager_->getFeatures())
   {
@@ -367,6 +375,182 @@ void Estimator::Optimization()
   ceres::Solver::Summary summary;
   ceres::Solve(options, &problem, &summary);
   double2vector();
+
+  PrepareMarginalizationFactor();
+}
+
+void Estimator::PrepareMarginalizationFactor()
+{
+  ceres::LossFunction *loss_function = new ceres::HuberLoss(1.0);
+  if (frame_count_ < WINDOW_SIZE)
+    return;
+  if (marg_flag_ == MARGIN_OLD)
+  {
+    auto *marginalization_info = new factor::MarginalizationInfo();
+    vector2double();
+    if (last_marginalization_info_ && last_marginalization_info_->valid_)
+    {
+      std::vector<int> drop_set;
+      for (int i = 0; i < static_cast<int>(last_marginalization_parameter_blocks_.size()); i++)
+      {
+        if (last_marginalization_parameter_blocks_[i] ==
+            param_pose_[0] /* || last_marginalization_parameter_blocks_[i] == param_speedBias[0]*/)
+          drop_set.push_back(i);
+      }
+      auto *marginalization_factor = new factor::MarginalizationFactor(last_marginalization_info_);
+      auto *residual_block_info = new factor::MargResidualBlockInfo(
+          marginalization_factor, nullptr, last_marginalization_parameter_blocks_, drop_set);
+      residual_block_info->residual_block_name_ = "marg_factor";
+      marginalization_info->AddResidualBlockInfo(residual_block_info);
+    }
+
+    if (USE_IMU)
+    {
+      /// .....
+    }
+
+    int feature_index = -1;
+    for (auto &it_per_id : feature_manager_->getFeatures())
+    {
+      it_per_id.used_num_ = static_cast<int>(it_per_id.feature_per_frame_.size());
+      if (it_per_id.used_num_ < 4)
+        continue;
+      ++feature_index;
+      int window_i = it_per_id.start_frame_, window_j = window_i - 1;
+
+      if (window_i != 0)
+        continue;
+
+      Eigen::Vector3d pts_i = it_per_id.feature_per_frame_[0].point_;
+      for (auto &it_per_frame : it_per_id.feature_per_frame_)
+      {
+        window_j++;
+        if (window_i != window_j)
+        {
+          // clang-format off
+          Eigen::Vector3d pts_j = it_per_frame.point_;
+          auto *f_td = new factor::ProjectionTwoFrameOneCamFactor(pts_i, pts_j, it_per_id.feature_per_frame_[0].velocity_,
+                            it_per_frame.velocity_, it_per_id.feature_per_frame_[0].cur_td_, it_per_frame.cur_td_);
+          auto *residual_block_info = new factor::MargResidualBlockInfo(f_td, loss_function,
+                                      std::vector<double *>{param_pose_[0], param_pose_[window_j], param_ex_pose_[0],
+                                       param_feature_[feature_index], param_td_[0]}, std::vector<int>{0, 3});
+          marginalization_info->AddResidualBlockInfo(residual_block_info);
+        }
+        if(it_per_frame.track_right_success_)
+        {
+          Eigen::Vector3d pts_j_right = it_per_frame.point_right_;
+          if(window_i != window_j)
+          {
+            auto *f = new factor::ProjectionTwoFrameTwoCamFactor(pts_i, pts_j_right,
+                           it_per_id.feature_per_frame_[0].velocity_, it_per_frame.velocity_right_,
+                                     it_per_id.feature_per_frame_[0].cur_td_, it_per_frame.cur_td_);
+            auto *residual_block_info = new factor::MargResidualBlockInfo(f, loss_function,
+                                  std::vector<double *>{param_pose_[0], param_pose_[window_j], param_ex_pose_[0],
+                                                  param_ex_pose_[1], param_feature_[feature_index], param_td_[0]}, std::vector<int>{0, 4});
+            marginalization_info->AddResidualBlockInfo(residual_block_info);
+          }
+          else
+          {
+            auto *f = new factor::ProjectionOneFrameTwoCamFactor(pts_i, pts_j_right,
+                        it_per_id.feature_per_frame_[0].velocity_, it_per_frame.velocity_right_,
+                          it_per_id.feature_per_frame_[0].cur_td_, it_per_frame.cur_td_);
+            auto *residual_block_info = new factor::MargResidualBlockInfo(f, loss_function,
+                         std::vector<double *>{param_ex_pose_[0],
+                             param_ex_pose_[1], param_feature_[feature_index], param_td_[0]}, std:: vector<int>{2});
+            marginalization_info->AddResidualBlockInfo(residual_block_info);
+            // clang-format on
+          }
+        }
+      }
+    }
+    // auto marg_factor_num = std::count_if(marginalization_info->factors_.begin(),
+    //            marginalization_info->factors_.end(),[](const factor::MargResidualBlockInfo *residual){
+    //   return residual->residual_block_name_ == "marg_factor";
+    // });
+    marginalization_info->PreMarginalize();
+    marginalization_info->Marginalize();
+    std::unordered_map<long, double *> addr_shift;
+    for (int i = 1; i <= WINDOW_SIZE; i++)
+    {
+      addr_shift[reinterpret_cast<long>(param_pose_[i])] = param_pose_[i - 1];
+      if (USE_IMU)
+      {
+        /// ......
+      }
+    }
+    for (int i = 0; i < 2; i++)
+      addr_shift[reinterpret_cast<long>(param_ex_pose_[i])] = param_ex_pose_[i];
+
+    addr_shift[reinterpret_cast<long>(param_td_[0])] = param_td_[0];
+
+    std::vector<double *> parameter_blocks = marginalization_info->getParameterBlocks(addr_shift);
+
+    if (last_marginalization_info_)
+      delete last_marginalization_info_;
+    last_marginalization_info_ = marginalization_info;
+    last_marginalization_parameter_blocks_ = parameter_blocks;
+  }
+  else
+  {
+    if (last_marginalization_info_ && std::count(std::begin(last_marginalization_parameter_blocks_),
+                                                 std::end(last_marginalization_parameter_blocks_),
+                                                 param_pose_[WINDOW_SIZE - 1]))
+    {
+      auto *marginalization_info = new factor::MarginalizationInfo();
+      vector2double();
+      if (last_marginalization_info_ && last_marginalization_info_->valid_)
+      {
+        std::vector<int> drop_set;
+        for (int i = 0; i < static_cast<int>(last_marginalization_parameter_blocks_.size()); i++)
+        {
+          // ROS_ASSERT(last_marginalization_parameter_blocks[i] != para_SpeedBias[WINDOW_SIZE - 1]);
+          if (last_marginalization_parameter_blocks_[i] == param_pose_[WINDOW_SIZE - 1])
+            drop_set.push_back(i);
+        }
+        // construct new marginlization_factor
+        auto *marginalization_factor = new factor::MarginalizationFactor(last_marginalization_info_);
+        auto *residual_block_info = new factor::MargResidualBlockInfo(
+            marginalization_factor, nullptr, last_marginalization_parameter_blocks_, drop_set);
+
+        marginalization_info->AddResidualBlockInfo(residual_block_info);
+      }
+      marginalization_info->PreMarginalize();
+      marginalization_info->Marginalize();
+
+      std::unordered_map<long, double *> addr_shift;
+      for (int i = 0; i <= WINDOW_SIZE; i++)
+      {
+        if (i == WINDOW_SIZE - 1)
+          continue;
+        else if (i == WINDOW_SIZE)
+        {
+          addr_shift[reinterpret_cast<long>(param_pose_[i])] = param_pose_[i - 1];
+          if (USE_IMU)
+          {
+            ///...
+          }
+        }
+        else
+        {
+          addr_shift[reinterpret_cast<long>(param_pose_[i])] = param_pose_[i];
+          if (USE_IMU)
+          {
+            /// ...
+          }
+        }
+      }
+      for (int i = 0; i < 2; i++)
+        addr_shift[reinterpret_cast<long>(param_ex_pose_[i])] = param_ex_pose_[i];
+
+      addr_shift[reinterpret_cast<long>(param_td_[0])] = param_td_[0];
+
+      std::vector<double *> parameter_blocks = marginalization_info->getParameterBlocks(addr_shift);
+      if (last_marginalization_info_)
+        delete last_marginalization_info_;
+      last_marginalization_info_ = marginalization_info;
+      last_marginalization_parameter_blocks_ = parameter_blocks;
+    }
+  }
 }
 
 void Estimator::vector2double()
