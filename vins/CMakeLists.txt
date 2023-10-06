@@ -19,6 +19,9 @@ factor/pose_local_parameterization.cpp
 factor/projection2frame1camera_factor.cpp
 factor/projection1frame2camera_factor.cpp
 factor/projection2frame2camera_factor.cpp
+factor/marginalization/marg_factor.cpp
+factor/marginalization/marg_info.cpp
+factor/marginalization/marg_residual_block_info.cpp
 )
 
 target_link_libraries(${PROJECT_NAME} glog gflags ${OpenCV_LIBS} ${catkin_LIBRARIES} ${CERES_LIBRARIES})
