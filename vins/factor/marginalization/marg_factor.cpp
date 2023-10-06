@@ -24,7 +24,7 @@ bool MarginalizationFactor::Evaluate(const double *const *parameters, double *re
     int size = marginalization_info_->keep_block_size_[i];
     int idx = marginalization_info_->keep_block_idx_[i] - m;
     Eigen::VectorXd x = Eigen::Map<const Eigen::VectorXd>(parameters[i], size);
-    Eigen::Vector3d x0 = Eigen::Map<const Eigen::VectorXd>(marginalization_info_->keep_block_data_[i], size);
+    Eigen::VectorXd x0 = Eigen::Map<const Eigen::VectorXd>(marginalization_info_->keep_block_data_[i], size);
     if (size != 7)
       dx.segment(idx, size) = x - x0;
     else
