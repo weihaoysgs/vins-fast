@@ -1,3 +1,3 @@
 <launch>
-    <node name="rviz_visualisation" pkg="rviz" type="rviz" output="log" args="-d $(find vins)/config/rviz/vins_rviz_config.rviz" />
+    <node name="rviz_visualisation" pkg="rviz" type="rviz" output="log" args="-d $(find vins)/config/rviz/vins.rviz" />
 </launch>
