@@ -6,6 +6,8 @@
 #include "common/utils.hpp"
 #include "factor/pose_local_parameterization.hpp"
 #include "factor/projection2frame1camera_factor.hpp"
+#include "factor/projection2frame2camera_factor.hpp"
+#include "factor/projection1frame2camera_factor.hpp"
 #include "common/size_pose_param.hpp"
 #include "Eigen/Core"
 #include "common/visualization.hpp"

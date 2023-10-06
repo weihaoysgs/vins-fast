@@ -58,6 +58,8 @@ void Estimator::SetParameter()
 
   ReadImuCameraExternalParam();
   factor::ProjectionTwoFrameOneCamFactor::sqrt_info_ = 460.0 / 1.5 * Eigen::Matrix2d::Identity();
+  factor::ProjectionTwoFrameTwoCamFactor::sqrt_info_ = 460.0 / 1.5 * Eigen::Matrix2d::Identity();
+  factor::ProjectionOneFrameTwoCamFactor::sqrt_info_ = 460.0 / 1.2 * Eigen::Matrix2d::Identity();
 }
 
 void Estimator::ReadImuCameraExternalParam()
@@ -210,7 +212,7 @@ void Estimator::ProcessImage(const std::map<int, std::vector<std::pair<int, Eige
   {
     feature_manager_->InitFramePoseByPnP(frame_count_, Ps_, Rs_, tic_, ric_);
     feature_manager_->TriangulatePts(Ps_, Rs_, tic_, ric_);
-    
+
     Optimization();
     std::set<int> remove_ids;
     feature_manager_->OutliersRejection(remove_ids, Rs_, Ps_, ric_, tic_);
@@ -290,12 +292,12 @@ void Estimator::Optimization()
     problem.SetParameterBlockConstant(param_pose_[0]);
   }
 
-  for (auto & ex_pose_ : param_ex_pose_)
+  for (int i = 0; i < 2; i++)
   {
     ceres::LocalParameterization *local_cam_pose_parameter = new factor::PoseLocalParameterization();
-    problem.AddParameterBlock(ex_pose_, SIZE_POSE, local_cam_pose_parameter);
+    problem.AddParameterBlock(param_ex_pose_[i], SIZE_POSE, local_cam_pose_parameter);
     {
-      problem.SetParameterBlockConstant(ex_pose_);
+      problem.SetParameterBlockConstant(param_ex_pose_[i]);
     }
   }
 
@@ -322,11 +324,36 @@ void Estimator::Optimization()
       {
         // clang-format off
         Eigen::Vector3d pts_j = id_per_frame.point_;
-        auto *residual_block = new factor::ProjectionTwoFrameOneCamFactor(pts_i, pts_j, id_observed_feature.feature_per_frame_[0].velocity_,
-                                    id_per_frame.velocity_, id_observed_feature.feature_per_frame_[0].cur_td_, id_per_frame.cur_td_);
-        problem.AddResidualBlock(residual_block, loss_function, param_pose_[window_i], param_pose_[window_j], param_ex_pose_[0],
+        auto *residual_block = new factor::ProjectionTwoFrameOneCamFactor(pts_i, pts_j,
+            id_observed_feature.feature_per_frame_[0].velocity_, id_per_frame.velocity_,
+                  id_observed_feature.feature_per_frame_[0].cur_td_, id_per_frame.cur_td_);
+        problem.AddResidualBlock(residual_block, loss_function, param_pose_[window_i],
+                                  param_pose_[window_j], param_ex_pose_[0],
                                  param_feature_[feature_index], param_td_[0]);
-        // clang-format on
+
+      }
+      if (id_per_frame.track_right_success_)
+      {
+        Eigen::Vector3d pts_j_right = id_per_frame.point_right_;
+        if (window_i != window_j)
+        {
+          auto *residual = new factor::ProjectionTwoFrameTwoCamFactor(pts_i, pts_j_right,
+                           id_observed_feature.feature_per_frame_[0].velocity_, id_per_frame.velocity_right_,
+                                     id_observed_feature.feature_per_frame_[0].cur_td_, id_per_frame.cur_td_);
+
+          problem.AddResidualBlock(residual, loss_function, param_pose_[window_i], param_pose_[window_j],
+                                   param_ex_pose_[0], param_ex_pose_[1], param_feature_[feature_index], param_td_[0]);
+        }
+        else
+        {
+          auto *residual = new factor::ProjectionOneFrameTwoCamFactor(pts_i, pts_j_right,
+                                id_observed_feature.feature_per_frame_[0].velocity_,
+                                 id_per_frame.velocity_, id_observed_feature.feature_per_frame_[0].cur_td_,
+                                     id_per_frame.cur_td_);
+          problem.AddResidualBlock(residual, loss_function, param_ex_pose_[0], param_ex_pose_[1],
+                                   param_feature_[feature_index], param_td_[0]);
+          // clang-format on
+        }
       }
     }
   }

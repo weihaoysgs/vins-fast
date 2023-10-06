@@ -69,6 +69,11 @@ bool ProjectionTwoFrameOneCamFactor::Evaluate(const double *const *parameters, d
 
       jacobi_pose_i.leftCols<6>() = reduce * jacobi_i;
       jacobi_pose_i.rightCols<1>().setZero();
+
+      {
+        // CheckPoseJacobi(jacobi_pose_i, Ri, Pi, Qj.toRotationMatrix(), Pj,
+        //                 pts_i_td, pts_j_td, inv_dep_i, qic, tic, residual);
+      }
     }
 
     /// Pose_j:{R_j,T_j}
@@ -113,9 +118,53 @@ bool ProjectionTwoFrameOneCamFactor::Evaluate(const double *const *parameters, d
       jacobi_td = reduce * ric.transpose() * Rj.transpose() * Ri * ric * velocity_i_ / inv_dep_i * -1.0 +
                   sqrt_info_ * velocity_j_.head(2);
     }
-
   }
-
   return true;
+}
+
+void ProjectionTwoFrameOneCamFactor::CheckPoseJacobi(const Eigen::Matrix<double, 2, 7> &analysis_jacobi,
+                                                     const Eigen::Matrix3d &Ri, const Eigen::Vector3d &Pi,
+                                                     const Eigen::Matrix3d &Qj, const Eigen::Vector3d &Pj,
+                                                     const Eigen::Vector3d &pts_i_td, const Eigen::Vector3d &pts_j_td,
+                                                     const double inv_dep_i, const Eigen::Quaterniond &qic,
+                                                     const Eigen::Vector3d &tic, const Eigen::Vector2d &residual) const
+{
+  Eigen::Matrix<double, 2, 6> numeric_jacobi = Eigen::Matrix<double, 2, 6>::Zero();
+  const double eps = 1e-6;
+  Eigen::Quaterniond q_temp;
+  Eigen::Vector3d t_temp;
+  for (int i = 0; i < 6; i++)
+  {
+    Eigen::Vector3d delta = Eigen::Vector3d::Zero();
+    delta(i % 3) = eps;
+    if (i < 3)
+    {
+      q_temp = Eigen::Quaterniond(Ri);
+      t_temp = Pi + delta;
+    }
+    /// 对旋转进行扰动
+    else
+    {
+      Eigen::Matrix<double, 3, 1> half_theta = delta;
+      half_theta /= static_cast<double>(2.0);
+      Eigen::Quaternion<double> dq(1.0, half_theta.x(), half_theta.y(), half_theta.z());
+      q_temp = (Ri * dq.toRotationMatrix());
+      t_temp = Pi;
+    }
+
+    Eigen::Vector3d _pts_camera_i = pts_i_td / inv_dep_i;   /// 得到 i 时刻相机系下的坐标
+    Eigen::Vector3d _pts_imu_i = qic * _pts_camera_i + tic; /// 得到 IMU 系下的坐标
+    Eigen::Vector3d _pts_w = q_temp * _pts_imu_i + t_temp;  /// 得到世界系下的坐标
+    Eigen::Vector3d _pts_imu_j = Qj.inverse() * (_pts_w - Pj); /// 根据 j 时刻的位姿将坐标点投影到 j 时刻的 IMU 坐标系下
+    Eigen::Vector3d _pts_camera_j = qic.inverse() * (_pts_imu_j - tic); /// 得到 j 时刻相机系下的坐标
+    Eigen::Vector2d _residual;
+
+    double _dep_j = _pts_camera_j.z();                                   /// 得到 j 时刻的相机系下的深度值
+    _residual = (_pts_camera_j / _dep_j).head<2>() - pts_j_td.head<2>(); /// 计算归一化坐标的残差
+    _residual = sqrt_info_ * _residual;
+    numeric_jacobi.col(i) = (_residual - residual) / eps;
+  }
+  std::cout << "analysis jacobi:\n" << analysis_jacobi << std::endl;
+  std::cout << "numeric jacobi:\n" << numeric_jacobi << std::endl;
 }
 } // namespace factor
