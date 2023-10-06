@@ -40,28 +40,58 @@ public:
   };
 
 public:
+  /// @brief constructor
   Estimator();
+
+  /// @brief Front process thread
   void tFrontendProcess();
+
+  /// @brief Backend process thread
   void tBackendProcess();
+
+  /// @brief Track image
   void FrontendTracker(double t, const cv::Mat &img0, const cv::Mat &img1);
+
+  /// @brief Read camera external param
   void ReadImuCameraExternalParam();
+
+  /// @brief Process image
   void ProcessImage(const std::map<int, std::vector<std::pair<int, Eigen::Matrix<double, 7, 1>>>> &image,
                     const double time);
+
+  /// @brief Clear member variable vlaue
   void ClearState();
+
+  /// @brief Set parameter
   void SetParameter();
+
+  /// @brief Backend optimization
   void Optimization();
+
+  /// @brief Prepare marginalization factor
   void PrepareMarginalizationFactor();
+
+  /// @brief Slide window, remove parameters
   void SlideWindow();
+
+  /// @brief Slide when marg_flag_ is MARGIN_OLD
   void SlideWindowOld();
+
+  /// @brief Slide when marg_flag_ is MARGIN_SECOND_NEW
   void SlideWindowNew();
+
+  /// @brief Maintain system optimization variables
   void vector2double();
   void double2vector();
+
+  /// @brief Left image callback
   void Image0Callback(const sensor_msgs::ImageConstPtr &img_msg)
   {
     std::unique_lock<std::mutex> lck(img_buf_mutex_);
     img0_buf_.push(img_msg);
   };
 
+  /// @brief Right image callback
   void Image1Callback(const sensor_msgs::ImageConstPtr &img_msg)
   {
     std::unique_lock<std::mutex> lck(img_buf_mutex_);
@@ -100,6 +130,7 @@ private:
   double time_diff_ = 0;
   double current_time_, previous_time_;
 
+  /// parameter for ceres opt
   double param_pose_[WINDOW_SIZE + 1][SIZE_POSE];
   double param_feature_[1000][SIZE_FEATURE];
   double param_ex_pose_[2][SIZE_POSE];
