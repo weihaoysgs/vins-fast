@@ -212,8 +212,9 @@ void Estimator::ProcessImage(const std::map<int, std::vector<std::pair<int, Eige
   {
     feature_manager_->InitFramePoseByPnP(frame_count_, Ps_, Rs_, tic_, ric_);
     feature_manager_->TriangulatePts(Ps_, Rs_, tic_, ric_);
-
+    common::TicToc tim;
     Optimization();
+    // LOG(INFO) << "Optimization cost " << tim.tEnd() << " ms";
     std::set<int> remove_ids;
     feature_manager_->OutliersRejection(remove_ids, Rs_, Ps_, ric_, tic_);
     feature_manager_->RemoveOutlier(remove_ids);
@@ -310,8 +311,7 @@ void Estimator::Optimization()
   {
     // construct new marginalization_factor
     auto *marginalization_factor = new factor::MarginalizationFactor(last_marginalization_info_);
-    problem.AddResidualBlock(marginalization_factor, nullptr,
-                             last_marginalization_parameter_blocks_);
+    problem.AddResidualBlock(marginalization_factor, nullptr, last_marginalization_parameter_blocks_);
   }
 
   int feature_index = -1;
@@ -376,7 +376,10 @@ void Estimator::Optimization()
   ceres::Solve(options, &problem, &summary);
   double2vector();
 
+  common::TicToc tim;
   PrepareMarginalizationFactor();
+  // std::string marg_flag = marg_flag_ == MARGIN_OLD ? "MARGIN_OLD" : "MARGIN_SECOND_NEW";
+  // LOG(INFO) << marg_flag + " marginalization cost " << tim.tEnd() << " ms";
 }
 
 void Estimator::PrepareMarginalizationFactor()

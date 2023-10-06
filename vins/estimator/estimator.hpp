@@ -20,6 +20,7 @@
 #include <sensor_msgs/Image.h>
 #include <queue>
 #include <thread>
+#include "common/time_calculate.hpp"
 
 namespace estimator {
 
