@@ -8,7 +8,21 @@
 
 </div>
 
-
-🏃📝📜🛠️
-
 VINS has been completely reconstructed and rewritten using C++ object-oriented, and supports stero or stero + IMU.
+
+
+## Stero Only Mode Result 🏃
+
+<div align="center">
+
+<img src="./images/MH_05_Stero_Only.png" width = 55%>
+
+</div>
+
+## IMU Simulate Result 🛠️
+
+<div align="center">
+
+<img src="./images/imu_simulate.png" width = 55%>
+
+</div>
