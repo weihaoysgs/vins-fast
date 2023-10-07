@@ -23,10 +23,19 @@ public:
   IntegrationBase(const Eigen::Vector3d &acc_0, const Eigen::Vector3d &gyr_0, const Eigen::Vector3d &linearized_ba,
                   const Eigen::Vector3d &linearized_bg);
   void ReadNoiseParameter();
+  void MidPointIntegration(double _dt, const Eigen::Vector3d &_acc_0, const Eigen::Vector3d &_gyr_0,
+                           const Eigen::Vector3d &_acc_1, const Eigen::Vector3d &_gyr_1, const Eigen::Vector3d &delta_p,
+                           const Eigen::Quaterniond &delta_q, const Eigen::Vector3d &delta_v,
+                           const Eigen::Vector3d &linearized_ba, const Eigen::Vector3d &linearized_bg,
+                           Eigen::Vector3d &result_delta_p, Eigen::Quaterniond &result_delta_q,
+                           Eigen::Vector3d &result_delta_v, Eigen::Vector3d &result_linearized_ba,
+                           Eigen::Vector3d &result_linearized_bg, bool update_jacobian);
+  void push_back(double dt, const Eigen::Vector3d &acc, const Eigen::Vector3d &gyr);
+  void Propagate(double _dt, const Eigen::Vector3d &_acc_1, const Eigen::Vector3d &_gyr_1);
 
 public:
-  Eigen::Vector3d acc_0_, gyr_0_;
-  Eigen::Vector3d acc_1_, gyr_1_;
+  Eigen::Vector3d acc_0_, gyr_0_; /// last time acc, gyr
+  Eigen::Vector3d acc_1_, gyr_1_; /// current time acc, gyr
 
   Eigen::Vector3d linearized_acc_, linearized_gyr_;
   Eigen::Vector3d linearized_ba_, linearized_bg_;
