@@ -19,7 +19,7 @@ VINS has been completely reconstructed and rewritten using C++ object-oriented, 
 
 </div>
 
-## IMU Simulate Result `:kissing_smiling_eyes:`
+## IMU Simulate Result :kissing_smiling_eyes:
 
 <div align="center">
 
