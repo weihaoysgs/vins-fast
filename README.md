@@ -1,4 +1,4 @@
-# Vins-Modern [(Continuously updating...)](https://github.com/weihaoysgs/vins-fast)
+# Vins-Modern [(Continuously updating...)](https://github.com/weihaoysgs/vins-fast) :heart_eyes:
 <div align="center">
 
 [English](README.md) | [Chinese](doc/Chinese.md)
@@ -11,7 +11,7 @@
 VINS has been completely reconstructed and rewritten using C++ object-oriented, and supports stero or stero + IMU.
 
 
-## Stero Only Mode Result 🏃
+## Stero Only Mode Result :sunglasses:
 
 <div align="center">
 
@@ -19,7 +19,7 @@ VINS has been completely reconstructed and rewritten using C++ object-oriented, 
 
 </div>
 
-## IMU Simulate Result 🛠️
+## IMU Simulate Result `:kissing_smiling_eyes:`
 
 <div align="center">
 
