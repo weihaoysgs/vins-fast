@@ -113,6 +113,7 @@ void IntegrationBase::MidPointIntegration(double _dt, const Eigen::Vector3d &_ac
     V.block<3, 3>(9, 12) = Eigen::MatrixXd::Identity(3, 3) * _dt;
     V.block<3, 3>(12, 15) = Eigen::MatrixXd::Identity(3, 3) * _dt;
 
+    // step_jacobian_ = F;
     jacobian_ = F * jacobian_;
     covariance_ = F * covariance_ * F.transpose() + V * noise_ * V.transpose();
   }
@@ -152,6 +153,7 @@ void IntegrationBase::Propagate(double _dt, const Eigen::Vector3d &_acc_1, const
                       result_linearized_ba,
                       result_linearized_bg,
                       true);
+  // CheckJacobian(_dt, acc_0_, gyr_0_, acc_1_, gyr_1_, delta_p_, delta_q_, delta_v_, linearized_ba_, linearized_bg_);
   delta_p_ = result_delta_p;
   delta_q_ = result_delta_q;
   delta_v_ = result_delta_v;
@@ -161,6 +163,183 @@ void IntegrationBase::Propagate(double _dt, const Eigen::Vector3d &_acc_1, const
   sum_dt_ += dt_;
   acc_0_ = acc_1_;
   gyr_0_ = gyr_1_;
+}
+
+void IntegrationBase::CheckJacobian(double _dt, const Eigen::Vector3d &_acc_0, const Eigen::Vector3d &_gyr_0,
+                                    const Eigen::Vector3d &_acc_1, const Eigen::Vector3d &_gyr_1,
+                                    const Eigen::Vector3d &delta_p, const Eigen::Quaterniond &delta_q,
+                                    const Eigen::Vector3d &delta_v, const Eigen::Vector3d &linearized_ba,
+                                    const Eigen::Vector3d &linearized_bg)
+{
+  Eigen::Vector3d result_delta_p;
+  Eigen::Quaterniond result_delta_q;
+  Eigen::Vector3d result_delta_v;
+  Eigen::Vector3d result_linearized_ba;
+  Eigen::Vector3d result_linearized_bg;
+  MidPointIntegration(_dt,
+                      _acc_0,
+                      _gyr_0,
+                      _acc_1,
+                      _gyr_1,
+                      delta_p,
+                      delta_q,
+                      delta_v,
+                      linearized_ba,
+                      linearized_bg,
+                      result_delta_p,
+                      result_delta_q,
+                      result_delta_v,
+                      result_linearized_ba,
+                      result_linearized_bg,
+                      0);
+
+  Eigen::Vector3d turb_delta_p;
+  Eigen::Quaterniond turb_delta_q;
+  Eigen::Vector3d turb_delta_v;
+  Eigen::Vector3d turb_linearized_ba;
+  Eigen::Vector3d turb_linearized_bg;
+
+  Eigen::Vector3d turb(0.0001, -0.003, 0.003);
+
+  MidPointIntegration(_dt,
+                      _acc_0,
+                      _gyr_0,
+                      _acc_1,
+                      _gyr_1,
+                      delta_p + turb,
+                      delta_q,
+                      delta_v,
+                      linearized_ba,
+                      linearized_bg,
+                      turb_delta_p,
+                      turb_delta_q,
+                      turb_delta_v,
+                      turb_linearized_ba,
+                      turb_linearized_bg,
+                      0);
+  std::cout << "turb p       " << std::endl;
+  std::cout << "p diff       " << (turb_delta_p - result_delta_p).transpose() << std::endl;
+  std::cout << "p jacob diff " << (step_jacobian_.block<3, 3>(0, 0) * turb).transpose() << std::endl;
+  std::cout << "q diff       " << ((result_delta_q.inverse() * turb_delta_q).vec() * 2).transpose() << std::endl;
+  std::cout << "q jacob diff " << (step_jacobian_.block<3, 3>(3, 0) * turb).transpose() << std::endl;
+  std::cout << "v diff       " << (turb_delta_v - result_delta_v).transpose() << std::endl;
+  std::cout << "v jacob diff " << (step_jacobian_.block<3, 3>(6, 0) * turb).transpose() << std::endl;
+  std::cout << "ba diff      " << (turb_linearized_ba - result_linearized_ba).transpose() << std::endl;
+  std::cout << "ba jacob diff" << (step_jacobian_.block<3, 3>(9, 0) * turb).transpose() << std::endl;
+  std::cout << "bg diff " << (turb_linearized_bg - result_linearized_bg).transpose() << std::endl;
+  std::cout << "bg jacob diff " << (step_jacobian_.block<3, 3>(12, 0) * turb).transpose() << std::endl;
+
+  MidPointIntegration(_dt,
+                      _acc_0,
+                      _gyr_0,
+                      _acc_1,
+                      _gyr_1,
+                      delta_p,
+                      delta_q * Eigen::Quaterniond(1, turb(0) / 2, turb(1) / 2, turb(2) / 2),
+                      delta_v,
+                      linearized_ba,
+                      linearized_bg,
+                      turb_delta_p,
+                      turb_delta_q,
+                      turb_delta_v,
+                      turb_linearized_ba,
+                      turb_linearized_bg,
+                      0);
+  std::cout << "turb q       " << std::endl;
+  std::cout << "p diff       " << (turb_delta_p - result_delta_p).transpose() << std::endl;
+  std::cout << "p jacob diff " << (step_jacobian_.block<3, 3>(0, 3) * turb).transpose() << std::endl;
+  std::cout << "q diff       " << ((result_delta_q.inverse() * turb_delta_q).vec() * 2).transpose() << std::endl;
+  std::cout << "q jacob diff " << (step_jacobian_.block<3, 3>(3, 3) * turb).transpose() << std::endl;
+  std::cout << "v diff       " << (turb_delta_v - result_delta_v).transpose() << std::endl;
+  std::cout << "v jacob diff " << (step_jacobian_.block<3, 3>(6, 3) * turb).transpose() << std::endl;
+  std::cout << "ba diff      " << (turb_linearized_ba - result_linearized_ba).transpose() << std::endl;
+  std::cout << "ba jacob diff" << (step_jacobian_.block<3, 3>(9, 3) * turb).transpose() << std::endl;
+  std::cout << "bg diff      " << (turb_linearized_bg - result_linearized_bg).transpose() << std::endl;
+  std::cout << "bg jacob diff" << (step_jacobian_.block<3, 3>(12, 3) * turb).transpose() << std::endl;
+
+  MidPointIntegration(_dt,
+                      _acc_0,
+                      _gyr_0,
+                      _acc_1,
+                      _gyr_1,
+                      delta_p,
+                      delta_q,
+                      delta_v + turb,
+                      linearized_ba,
+                      linearized_bg,
+                      turb_delta_p,
+                      turb_delta_q,
+                      turb_delta_v,
+                      turb_linearized_ba,
+                      turb_linearized_bg,
+                      0);
+  std::cout << "turb v       " << std::endl;
+  std::cout << "p diff       " << (turb_delta_p - result_delta_p).transpose() << std::endl;
+  std::cout << "p jacob diff " << (step_jacobian_.block<3, 3>(0, 6) * turb).transpose() << std::endl;
+  std::cout << "q diff       " << ((result_delta_q.inverse() * turb_delta_q).vec() * 2).transpose() << std::endl;
+  std::cout << "q jacob diff " << (step_jacobian_.block<3, 3>(3, 6) * turb).transpose() << std::endl;
+  std::cout << "v diff       " << (turb_delta_v - result_delta_v).transpose() << std::endl;
+  std::cout << "v jacob diff " << (step_jacobian_.block<3, 3>(6, 6) * turb).transpose() << std::endl;
+  std::cout << "ba diff      " << (turb_linearized_ba - result_linearized_ba).transpose() << std::endl;
+  std::cout << "ba jacob diff" << (step_jacobian_.block<3, 3>(9, 6) * turb).transpose() << std::endl;
+  std::cout << "bg diff      " << (turb_linearized_bg - result_linearized_bg).transpose() << std::endl;
+  std::cout << "bg jacob diff" << (step_jacobian_.block<3, 3>(12, 6) * turb).transpose() << std::endl;
+
+  MidPointIntegration(_dt,
+                      _acc_0,
+                      _gyr_0,
+                      _acc_1,
+                      _gyr_1,
+                      delta_p,
+                      delta_q,
+                      delta_v,
+                      linearized_ba + turb,
+                      linearized_bg,
+                      turb_delta_p,
+                      turb_delta_q,
+                      turb_delta_v,
+                      turb_linearized_ba,
+                      turb_linearized_bg,
+                      0);
+  std::cout << "turb ba       " << std::endl;
+  std::cout << "p diff       " << (turb_delta_p - result_delta_p).transpose() << std::endl;
+  std::cout << "p jacob diff " << (step_jacobian_.block<3, 3>(0, 9) * turb).transpose() << std::endl;
+  std::cout << "q diff       " << ((result_delta_q.inverse() * turb_delta_q).vec() * 2).transpose() << std::endl;
+  std::cout << "q jacob diff " << (step_jacobian_.block<3, 3>(3, 9) * turb).transpose() << std::endl;
+  std::cout << "v diff       " << (turb_delta_v - result_delta_v).transpose() << std::endl;
+  std::cout << "v jacob diff " << (step_jacobian_.block<3, 3>(6, 9) * turb).transpose() << std::endl;
+  std::cout << "ba diff      " << (turb_linearized_ba - result_linearized_ba).transpose() << std::endl;
+  std::cout << "ba jacob diff" << (step_jacobian_.block<3, 3>(9, 9) * turb).transpose() << std::endl;
+  std::cout << "bg diff      " << (turb_linearized_bg - result_linearized_bg).transpose() << std::endl;
+  std::cout << "bg jacob diff" << (step_jacobian_.block<3, 3>(12, 9) * turb).transpose() << std::endl;
+
+  MidPointIntegration(_dt,
+                      _acc_0,
+                      _gyr_0,
+                      _acc_1,
+                      _gyr_1,
+                      delta_p,
+                      delta_q,
+                      delta_v,
+                      linearized_ba,
+                      linearized_bg + turb,
+                      turb_delta_p,
+                      turb_delta_q,
+                      turb_delta_v,
+                      turb_linearized_ba,
+                      turb_linearized_bg,
+                      0);
+  std::cout << "turb bg       " << std::endl;
+  std::cout << "p diff       " << (turb_delta_p - result_delta_p).transpose() << std::endl;
+  std::cout << "p jacob diff " << (step_jacobian_.block<3, 3>(0, 12) * turb).transpose() << std::endl;
+  std::cout << "q diff       " << ((result_delta_q.inverse() * turb_delta_q).vec() * 2).transpose() << std::endl;
+  std::cout << "q jacob diff " << (step_jacobian_.block<3, 3>(3, 12) * turb).transpose() << std::endl;
+  std::cout << "v diff       " << (turb_delta_v - result_delta_v).transpose() << std::endl;
+  std::cout << "v jacob diff " << (step_jacobian_.block<3, 3>(6, 12) * turb).transpose() << std::endl;
+  std::cout << "ba diff      " << (turb_linearized_ba - result_linearized_ba).transpose() << std::endl;
+  std::cout << "ba jacob diff" << (step_jacobian_.block<3, 3>(9, 12) * turb).transpose() << std::endl;
+  std::cout << "bg diff      " << (turb_linearized_bg - result_linearized_bg).transpose() << std::endl;
+  std::cout << "bg jacob diff" << (step_jacobian_.block<3, 3>(12, 12) * turb).transpose() << std::endl;
 }
 
 } // namespace factor
