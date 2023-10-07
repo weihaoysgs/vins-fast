@@ -35,3 +35,9 @@ Generate simulate IMU data through [vio-data-simulation](https://github.com/HeYi
 
 - [VINS-Fusion](https://github.com/HKUST-Aerial-Robotics/VINS-Fusion)
 - [Vio-data-simulation](https://github.com/HeYijia/vio_data_simulation)
+
+## TODO List
+
+- [-] Add IMU to opt
+- [-] Add deep method
+- [-] Add other sensor
