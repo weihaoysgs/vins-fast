@@ -1,4 +1,4 @@
-# Vins-Modern
+# Vins-Modern [(Continuously updating...)](https://github.com/weihaoysgs/vins-fast)
 <div align="center">
 
 [English](README.md) | [Chinese](doc/Chinese.md)
@@ -26,3 +26,8 @@ VINS has been completely reconstructed and rewritten using C++ object-oriented, 
 <img src="./images/imu_simulate.png" width = 55%>
 
 </div>
+
+## Reference :stuck_out_tongue_winking_eye:
+
+- [VINS-Fusion](https://github.com/HKUST-Aerial-Robotics/VINS-Fusion)
+- [Vio-data-simulation](https://github.com/HeYijia/vio_data_simulation)
