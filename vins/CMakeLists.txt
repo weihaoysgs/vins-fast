@@ -22,9 +22,14 @@ factor/projection2frame2camera_factor.cpp
 factor/marginalization/marg_factor.cpp
 factor/marginalization/marg_info.cpp
 factor/marginalization/marg_residual_block_info.cpp
+factor/imu/imu_factor.cpp
+factor/imu/imu_integration_base.cpp
 )
 
 target_link_libraries(${PROJECT_NAME} glog gflags ${OpenCV_LIBS} ${catkin_LIBRARIES} ${CERES_LIBRARIES})
 
 add_executable(test_feature_track test/test_feature_tracker.cpp)
 target_link_libraries(test_feature_track ${PROJECT_NAME})
+
+add_executable(test_imu_integration test/test_imu_integration.cpp)
+target_link_libraries(test_imu_integration ${PROJECT_NAME})

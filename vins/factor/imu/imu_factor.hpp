@@ -2,7 +2,9 @@
 // Created by weihao on 23-10-7.
 //
 
-#ifndef SRC_IMU_FACTOR_HPP
-#define SRC_IMU_FACTOR_HPP
+#ifndef IMU_FACTOR_HPP
+#define IMU_FACTOR_HPP
 
-#endif //SRC_IMU_FACTOR_HPP
+#include "factor/imu/imu_integration_base.hpp"
+
+#endif //IMU_FACTOR_HPP
