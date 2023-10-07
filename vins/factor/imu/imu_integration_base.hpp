@@ -1,0 +1,8 @@
+//
+// Created by weihao on 23-10-7.
+//
+
+#ifndef SRC_IMU_INTEGRATION_BASE_HPP
+#define SRC_IMU_INTEGRATION_BASE_HPP
+
+#endif //SRC_IMU_INTEGRATION_BASE_HPP
