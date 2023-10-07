@@ -38,6 +38,6 @@ Generate simulate IMU data through [vio-data-simulation](https://github.com/HeYi
 
 ## TODO List
 
-- [-] Add IMU to opt
-- [-] Add deep method
-- [-] Add other sensor
+- [ ] Add IMU to opt
+- [ ] Add deep method
+- [ ] Add other sensor
