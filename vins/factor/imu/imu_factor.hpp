@@ -6,5 +6,17 @@
 #define IMU_FACTOR_HPP
 
 #include "factor/imu/imu_integration_base.hpp"
+#include <ceres/ceres.h>
+
+namespace factor {
+class IMUFactor : public ceres::SizedCostFunction<15, 7, 9, 7, 9>
+{
+public:
+  IMUFactor() = delete;
+  IMUFactor(IntegrationBase *pre_integration): pre_integration_(pre_integration){};
+  virtual bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const;
+  IntegrationBase *pre_integration_;
+};
+} // namespace factor
 
 #endif //IMU_FACTOR_HPP

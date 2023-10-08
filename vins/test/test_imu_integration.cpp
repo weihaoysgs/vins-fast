@@ -43,8 +43,8 @@ void EvaluateVinsIntegrationBase(std::vector<MotionData> &imu_data, const std::s
   Eigen::Vector3d Pwb = imu_data.at(0).twb;
   Eigen::Quaterniond Qwb(imu_data.at(0).Rwb);
   Eigen::Vector3d Vw = imu_data[0].imu_velocity;
-  std::cout << "Init P: " <<  Pwb.transpose() << std::endl;
-  std::cout << "Init R: " <<  Qwb.coeffs().transpose() << std::endl;
+  std::cout << "Init P: " << Pwb.transpose() << std::endl;
+  std::cout << "Init R: " << Qwb.coeffs().transpose() << std::endl;
   std::cout << "Init V: " << Vw.transpose() << std::endl;
   Eigen::Vector3d acc_0 = imu_data[0].imu_acc, gyr_0 = imu_data[0].imu_gyro, ba, bg;
   ba.setZero(), bg.setZero();
@@ -58,11 +58,15 @@ void EvaluateVinsIntegrationBase(std::vector<MotionData> &imu_data, const std::s
     //   std::cout << "cc:" << imu_pre_integration.delta_p_.transpose() << std::endl;
     // }
   }
-  double sum_dt = Param::t_end - Param::t_start;
-  Eigen::Vector3d Pj = Qwb * imu_pre_integration.delta_p_ + Pwb + Vw * sum_dt - 0.5 * Eigen::Vector3d(0,0,9.81) * sum_dt * sum_dt;
+  double sum_dt = imu_pre_integration.sum_dt_;
+  Eigen::Vector3d Pj =
+      Qwb * imu_pre_integration.delta_p_ + Pwb + Vw * sum_dt - 0.5 * Eigen::Vector3d(0, 0, 9.81) * sum_dt * sum_dt;
   Eigen::Quaterniond Qj = (Qwb * imu_pre_integration.delta_q_);
-  Eigen::Vector3d Vj = Qwb * imu_pre_integration.delta_v_ + Vw - Eigen::Vector3d(0,0,9.81) * sum_dt;
+  Eigen::Vector3d Vj = Qwb * imu_pre_integration.delta_v_ + Vw - Eigen::Vector3d(0, 0, 9.81) * sum_dt;
   std::cout << "Pj: " << Pj.transpose() << std::endl;
   std::cout << "Qj: " << Qj.coeffs().transpose() << std::endl;
   std::cout << "Vj: " << Vj.transpose() << std::endl;
+
+  Eigen::Matrix<double, 15, 1> residual = imu_pre_integration.Evaluate(Pwb, Qwb, Vw, ba, bg, Pj, Qj, Vj, ba, bg);
+  std::cout << "residual: " << residual.transpose() << std::endl;
 }

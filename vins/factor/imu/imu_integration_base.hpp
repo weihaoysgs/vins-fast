@@ -9,6 +9,8 @@
 #include "Eigen/Dense"
 #include <vector>
 #include "common/parameter.hpp"
+#include "common/size_pose_param.hpp"
+#include "common/algorithm.hpp"
 #include <glog/logging.h>
 
 namespace factor {
@@ -36,6 +38,11 @@ public:
                      const Eigen::Vector3d &_acc_1, const Eigen::Vector3d &_gyr_1, const Eigen::Vector3d &delta_p,
                      const Eigen::Quaterniond &delta_q, const Eigen::Vector3d &delta_v,
                      const Eigen::Vector3d &linearized_ba, const Eigen::Vector3d &linearized_bg);
+  Eigen::Matrix<double, 15, 1> Evaluate(const Eigen::Vector3d &Pi, const Eigen::Quaterniond &Qi,
+                                        const Eigen::Vector3d &Vi, const Eigen::Vector3d &Bai,
+                                        const Eigen::Vector3d &Bgi, const Eigen::Vector3d &Pj,
+                                        const Eigen::Quaterniond &Qj, const Eigen::Vector3d &Vj,
+                                        const Eigen::Vector3d &Baj, const Eigen::Vector3d &Bgj);
 
 public:
   Eigen::Vector3d acc_0_, gyr_0_; /// last time acc, gyr
@@ -66,6 +73,7 @@ public:
   double GYR_N; /// gyroscope measurement noise standard deviation.
   double ACC_W; /// accelerometer bias random work noise standard deviation.
   double GYR_W; /// gyroscope bias random work noise standard deviation.
+  Eigen::Vector3d G = Eigen::Vector3d::Zero();
 };
 
 } // namespace factor
