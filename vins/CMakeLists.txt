@@ -33,3 +33,6 @@ target_link_libraries(test_feature_track ${PROJECT_NAME})
 
 add_executable(test_imu_integration test/test_imu_integration.cpp)
 target_link_libraries(test_imu_integration ${PROJECT_NAME})
+
+add_executable(test_ins_system test/ins/test_imu_factor.cpp)
+target_link_libraries(test_ins_system ${PROJECT_NAME})
