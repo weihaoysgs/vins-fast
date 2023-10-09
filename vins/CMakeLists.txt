@@ -24,6 +24,7 @@ factor/marginalization/marg_info.cpp
 factor/marginalization/marg_residual_block_info.cpp
 factor/imu/imu_factor.cpp
 factor/imu/imu_integration_base.cpp
+initial/initial_alignment.cpp
 )
 
 target_link_libraries(${PROJECT_NAME} glog gflags ${OpenCV_LIBS} ${catkin_LIBRARIES} ${CERES_LIBRARIES})
