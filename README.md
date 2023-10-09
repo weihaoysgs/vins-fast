@@ -31,7 +31,7 @@ Generate simulate IMU data through [vio-data-simulation](https://github.com/HeYi
 
 </div>
 
-## Stero IMU Result :stuck_out_tongue_closed_eyes:
+## Stero IMU Result :yum:
 
 The stero IMU mode is test success, the `evo_ape` result as follows, the RMSE is `0.294500`.
 
