@@ -1,7 +1,7 @@
 %YAML:1.0
 
 # common parameters
-imu: 0
+imu: 1
 num_of_cam: 2
 
 imu_topic: "/imu0"
