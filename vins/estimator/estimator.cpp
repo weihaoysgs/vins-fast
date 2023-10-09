@@ -49,6 +49,7 @@ void Estimator::ClearState()
 
 void Estimator::SetParameter()
 {
+  g_.z() = common::Setting::getSingleton()->Get<double>("g_norm");
   USE_IMU = common::Setting::getSingleton()->Get<int>("imu");
   IMG0_TOPIC_NAME = common::Setting::getSingleton()->Get<std::string>("image0_topic");
   IMG1_TOPIC_NAME = common::Setting::getSingleton()->Get<std::string>("image1_topic");
@@ -142,11 +143,20 @@ void Estimator::FrontendTracker(double t, const cv::Mat &img0, const cv::Mat &im
   }
 }
 
+bool Estimator::IMUAvailable(double t)
+{
+  if (!acc_buf_.empty() && t <= acc_buf_.back().first)
+    return true;
+  else
+    return false;
+}
+
 void Estimator::tBackendProcess()
 {
   while (true)
   {
     std::pair<double, std::map<int, std::vector<std::pair<int, Eigen::Matrix<double, 7, 1>>>>> feature_frame;
+    std::vector<std::pair<double, Eigen::Vector3d>> acc_vector, gyr_vector;
     if (!feature_buf_.empty())
     {
       feature_buf_mutex_.lock();
@@ -156,8 +166,43 @@ void Estimator::tBackendProcess()
       current_time_ = feature_frame.first + time_diff_;
       ///////////////////////////
       /// Get IMU data
+      while (true)
+      {
+        if (!USE_IMU || IMUAvailable(current_time_))
+        {
+          break;
+        }
+        else
+        {
+          LOG(WARNING) << "wait for imu ... ";
+          std::chrono::milliseconds dura(1);
+          std::this_thread::sleep_for(dura);
+        }
+      }
+      if (USE_IMU)
+      {
+        GetIMUInterval(previous_time_, current_time_, acc_vector, gyr_vector);
+        if (!init_first_pose_flag_)
+        {
+          InitFirstIMUPose(acc_vector);
+        }
+        for (size_t i = 0; i < acc_vector.size(); i++)
+        {
+          double dt;
+          if (i == 0)
+            dt = acc_vector[i].first - previous_time_;
+          else if (i == acc_vector.size() - 1)
+            dt = current_time_ - acc_vector[i - 1].first;
+          else
+            dt = acc_vector[i].first - acc_vector[i - 1].first;
+          ProcessIMU(acc_vector[i].first, dt, acc_vector[i].second, gyr_vector[i].second);
+        }
+      }
+
       ///////////////////////////
       ProcessImage(feature_frame.second, current_time_);
+
+      previous_time_ = current_time_;
 
       std_msgs::Header header;
       header.frame_id = "world";
@@ -182,6 +227,19 @@ void Estimator::ProcessImage(const std::map<int, std::vector<std::pair<int, Eige
 
   if (solver_flag_ == SolverFlag::INITIAL)
   {
+    if (USE_IMU)
+    {
+      //feature_manager_->InitFramePoseByPnP(frame_count_, Ps_, Rs_, tic_, ric_);
+      feature_manager_->TriangulatePts(Ps_, Rs_, tic_, ric_);
+      Optimization();
+
+      if (frame_count_ == WINDOW_SIZE)
+      {
+        solver_flag_ = NON_LINEAR;
+        SlideWindow();
+      }
+    }
+
     if (!USE_IMU)
     {
       feature_manager_->InitFramePoseByPnP(frame_count_, Ps_, Rs_, tic_, ric_);
@@ -607,6 +665,111 @@ void Estimator::double2vector()
   for (int i = 0; i < feature_manager_->getFeatureCount(); i++)
     dep(i) = param_feature_[i][0];
   feature_manager_->setDepth(dep);
+}
+
+bool Estimator::GetIMUInterval(double t0, double t1, std::vector<std::pair<double, Eigen::Vector3d>> &acc_vector,
+                               std::vector<std::pair<double, Eigen::Vector3d>> &gyr_vector)
+{
+  if (acc_buf_.empty())
+  {
+    LOG(WARNING) << "not receive imu";
+    return false;
+  }
+  ///              t0        t1
+  /// [front] * * * * * * * * * *  [back]
+  if (t1 <= acc_buf_.back().first)
+  {
+    while (acc_buf_.front().first <= t0)
+    {
+      acc_buf_.pop();
+      gyr_buf_.pop();
+    }
+    ///  t0        t1
+    ///  * * * * * * * * *
+    while (acc_buf_.front().first < t1)
+    {
+      acc_vector.push_back(acc_buf_.front());
+      acc_buf_.pop();
+      gyr_vector.push_back(gyr_buf_.front());
+      gyr_buf_.pop();
+    }
+    acc_vector.push_back(acc_buf_.front());
+    gyr_vector.push_back(gyr_buf_.front());
+  }
+  else
+  {
+    LOG(WARNING) << "wait for imu";
+    return false;
+  }
+  return true;
+}
+
+void Estimator::IMUCallback(const sensor_msgs::ImuConstPtr &imu_msg)
+{
+  double t = imu_msg->header.stamp.toSec();
+  double dx = imu_msg->linear_acceleration.x;
+  double dy = imu_msg->linear_acceleration.y;
+  double dz = imu_msg->linear_acceleration.z;
+  double rx = imu_msg->angular_velocity.x;
+  double ry = imu_msg->angular_velocity.y;
+  double rz = imu_msg->angular_velocity.z;
+  Eigen::Vector3d acc(dx, dy, dz);
+  Eigen::Vector3d gyr(rx, ry, rz);
+  std::unique_lock<std::mutex> lck(imu_buf_mutex_);
+  acc_buf_.push(std::make_pair(t, acc));
+  gyr_buf_.push(std::make_pair(t, gyr));
+}
+
+void Estimator::InitFirstIMUPose(std::vector<std::pair<double, Eigen::Vector3d>> &acc_vector)
+{
+  LOG(INFO) << "init first imu pose";
+  init_first_pose_flag_ = true;
+  Eigen::Vector3d aver_ccc(0, 0, 0);
+  for (auto &i : acc_vector)
+  {
+    aver_ccc = aver_ccc + i.second;
+  }
+  aver_ccc = aver_ccc / acc_vector.size();
+  LOG(INFO) << "averge acc: " << aver_ccc.transpose();
+  Eigen::Matrix3d R0 = common::Algorithm::g2R(aver_ccc);
+  Rs_[0] = R0;
+  LOG(INFO) << "init R0\n " << Rs_[0];
+}
+
+void Estimator::ProcessIMU(double t, double dt, const Eigen::Vector3d &linear_acceleration,
+                           const Eigen::Vector3d &angular_velocity)
+{
+  if (first_imu_)
+  {
+    first_imu_ = false;
+    acc_0_ = linear_acceleration;
+    gyr_0_ = angular_velocity;
+  }
+
+  if (!pre_integrations_[frame_count_])
+  {
+    pre_integrations_[frame_count_] =
+        new factor::IntegrationBase{acc_0_, gyr_0_, Bas_[frame_count_], Bgs_[frame_count_]};
+  }
+
+  if (frame_count_ != 0)
+  {
+    pre_integrations_[frame_count_]->push_back(dt, linear_acceleration, angular_velocity);
+    dt_buf_[frame_count_].push_back(dt);
+    linear_acceleration_buf_[frame_count_].push_back(linear_acceleration);
+    angular_velocity_buf_[frame_count_].push_back(angular_velocity);
+
+    int j = frame_count_;
+    Eigen::Vector3d un_acc_0 = Rs_[j] * (acc_0_ - Bas_[j]) - g_; /// a^' = R^T * (a-g)
+    Eigen::Vector3d un_gyr = 0.5 * (gyr_0_ + angular_velocity) - Bgs_[j];
+    Rs_[j] *= common::Algorithm::DeltaQ(un_gyr * dt).toRotationMatrix();
+    Eigen::Vector3d un_acc_1 = Rs_[j] * (linear_acceleration - Bas_[j]) - g_;
+    Eigen::Vector3d un_acc = 0.5 * (un_acc_0 + un_acc_1);
+    Ps_[j] += dt * Vs_[j] + 0.5 * dt * dt * un_acc;
+    Vs_[j] += dt * un_acc;
+  }
+  acc_0_ = linear_acceleration;
+  gyr_0_ = angular_velocity;
 }
 
 }; // namespace estimator

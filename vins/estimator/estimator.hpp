@@ -9,6 +9,7 @@
 #include "factor/projection2frame2camera_factor.hpp"
 #include "factor/projection1frame2camera_factor.hpp"
 #include "factor/marginalization/marg_factor.hpp"
+#include "factor/imu/imu_factor.hpp"
 #include "common/size_pose_param.hpp"
 #include "Eigen/Core"
 #include "common/visualization.hpp"
@@ -20,6 +21,7 @@
 #include <sensor_msgs/Image.h>
 #include <queue>
 #include <thread>
+#include <vector>
 #include "common/time_calculate.hpp"
 
 namespace estimator {
@@ -42,6 +44,16 @@ public:
 public:
   /// @brief constructor
   Estimator();
+
+  bool GetIMUInterval(double t0, double t1, std::vector<std::pair<double, Eigen::Vector3d>> &acc_vector,
+                      std::vector<std::pair<double, Eigen::Vector3d>> &gyr_vector);
+
+  void InitFirstIMUPose(std::vector<std::pair<double, Eigen::Vector3d>> &acc_vector);
+
+  void ProcessIMU(double t, double dt, const Eigen::Vector3d &linear_acceleration,
+                  const Eigen::Vector3d &angular_velocity);
+
+  bool IMUAvailable(double t);
 
   /// @brief Front process thread
   void tFrontendProcess();
@@ -98,6 +110,9 @@ public:
     img1_buf_.push(img_msg);
   };
 
+  /// @brief IMU callback
+  void IMUCallback(const sensor_msgs::ImuConstPtr &imu_msg);
+
 private:
   MarginalizationFlag marg_flag_;
   SolverFlag solver_flag_;
@@ -111,10 +126,23 @@ private:
   static const int WINDOW_SIZE = 10;
   unsigned int input_image_cnt_{0};
   int frame_count_ = 0;
+  bool init_first_pose_flag_ = false;
+  bool first_imu_ = true;
 
   /// time:feature_per_frame
   std::queue<std::pair<double, std::map<int, std::vector<std::pair<int, Eigen::Matrix<double, 7, 1>>>>>> feature_buf_;
   std::queue<sensor_msgs::ImageConstPtr> img0_buf_, img1_buf_;
+
+  std::queue<std::pair<double, Eigen::Vector3d>> acc_buf_;
+  std::queue<std::pair<double, Eigen::Vector3d>> gyr_buf_;
+
+  factor::IntegrationBase *pre_integrations_[(WINDOW_SIZE + 1)];
+  Eigen::Vector3d acc_0_, gyr_0_;
+  Eigen::Vector3d g_;
+
+  std::vector<double> dt_buf_[(WINDOW_SIZE + 1)];
+  std::vector<Eigen::Vector3d> linear_acceleration_buf_[(WINDOW_SIZE + 1)];
+  std::vector<Eigen::Vector3d> angular_velocity_buf_[(WINDOW_SIZE + 1)];
 
   /// R_{imu,camera},t_{imu,camera}
   Eigen::Matrix3d ric_[2];
@@ -137,10 +165,12 @@ private:
   double param_td_[1][1];
 
   cv::Mat current_img_;
+
 public:
   std::mutex img_buf_mutex_;
   std::mutex feature_buf_mutex_;
   std::mutex current_img_mutex_;
+  std::mutex imu_buf_mutex_;
 
 public:
   int USE_IMU = 0;

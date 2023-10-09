@@ -25,7 +25,7 @@ void GoWithRosBag(estimator::Estimator &vins_estimator)
     if (m.getTopic() == vins_estimator.IMU_TOPIC_NAME && vins_estimator.USE_IMU)
     {
       sensor_msgs::Imu::ConstPtr msg = m.template instantiate<sensor_msgs::Imu>();
-      /// IMU callback fun
+      vins_estimator.IMUCallback(msg);
     }
     if (m.getTopic() == vins_estimator.IMG0_TOPIC_NAME)
     {

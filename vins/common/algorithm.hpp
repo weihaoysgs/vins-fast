@@ -6,6 +6,7 @@
 #define ALGORITHM_HPP
 
 #include "Eigen/Core"
+#include "Eigen/Dense"
 
 namespace common {
 class Algorithm
@@ -103,7 +104,28 @@ public:
     return Rz * Ry * Rx;
   }
 
-  // static Eigen::Matrix3d g2R(const Eigen::Vector3d &g);
+  static Eigen::Matrix3d g2R(const Eigen::Vector3d &g)
+  {
+    Eigen::Matrix3d R0;
+    Eigen::Vector3d ng1 = g.normalized();
+    /// 经测试发现这里改为 (3,2,1) 好像也可以正常运行
+    Eigen::Vector3d ng2{0, 0, 1.0};
+    ng2 = ng2.normalized();
+    // (R0 * ng1) = ng2
+    R0 = Eigen::Quaterniond::FromTwoVectors(ng1, ng2).toRotationMatrix();
+    // std::cout << ng1.transpose() << "," << ng2.transpose() << std::endl;
+    // std::cout << (R0 * ng1).transpose() << "," << (R0 * ng2).transpose() << std::endl;
+
+    /// 得到当前姿态在世界系下的 yaw 角
+    double yaw = R2ypr(R0).x();
+    /// 单独计算出该 -yaw 角对应的姿态 R (因为是要往回旋转) -> R_{wc_1}
+    /// 去掉 yaw 角，则要在当前的位姿下反向旋转 yaw 角度对应的旋转矩阵（反向对应的就是负数的 yaw）
+    /// R0 可以看做 ypr 三轴，可以看做是对 此时坐标轴的旋转
+    R0 = ypr2R(Eigen::Vector3d{-yaw, 0, 0}) * R0;
+    /// 一些思考：其实在VIO系统中，YAW角本身就是不可观的，因此这里其实你是否将其再进行 -yaw 角度的旋转其实是无所谓的（如果只是研究精度的，在最后进行对齐就行了）
+    /// 但是对于无人机等机器人系统来说，其是有朝向的，且对后面的导航至关重要，因此我们一般就直接设置成0在初始时刻，方便后面的一些导航算法的执行和计算。
+    return R0;
+  }
 
   template <size_t N> struct uint_
   {
