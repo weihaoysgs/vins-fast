@@ -9,6 +9,8 @@
 #include "Eigen/Dense"
 #include <fstream>
 #include <iostream>
+#include <vector>
+#include <glog/logging.h>
 
 struct ImuData
 {
