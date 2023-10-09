@@ -34,6 +34,7 @@ public:
                            Eigen::Vector3d &result_linearized_bg, bool update_jacobian);
   void push_back(double dt, const Eigen::Vector3d &acc, const Eigen::Vector3d &gyr);
   void Propagate(double _dt, const Eigen::Vector3d &_acc_1, const Eigen::Vector3d &_gyr_1);
+  void Repropagate(const Eigen::Vector3d &_linearized_ba, const Eigen::Vector3d &_linearized_bg);
   void CheckJacobian(double _dt, const Eigen::Vector3d &_acc_0, const Eigen::Vector3d &_gyr_0,
                      const Eigen::Vector3d &_acc_1, const Eigen::Vector3d &_gyr_1, const Eigen::Vector3d &delta_p,
                      const Eigen::Quaterniond &delta_q, const Eigen::Vector3d &delta_v,

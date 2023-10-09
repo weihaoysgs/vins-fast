@@ -160,6 +160,7 @@ private:
 
   /// parameter for ceres opt
   double param_pose_[WINDOW_SIZE + 1][SIZE_POSE];
+  double param_speed_bias_[WINDOW_SIZE + 1][SIZE_SPEED_BIAS];
   double param_feature_[1000][SIZE_FEATURE];
   double param_ex_pose_[2][SIZE_POSE];
   double param_td_[1][1];

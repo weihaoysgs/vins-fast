@@ -376,4 +376,20 @@ Eigen::Matrix<double, 15, 1> IntegrationBase::Evaluate(const Eigen::Vector3d &Pi
   return residuals;
 }
 
+void IntegrationBase::Repropagate(const Eigen::Vector3d &_linearized_ba, const Eigen::Vector3d &_linearized_bg)
+{
+  sum_dt_ = 0.0;
+  acc_0_ = linearized_acc_;
+  gyr_0_ = linearized_gyr_;
+  delta_p_.setZero();
+  delta_q_.setIdentity();
+  delta_v_.setZero();
+  linearized_ba_ = _linearized_ba;
+  linearized_bg_ = _linearized_bg;
+  jacobian_.setIdentity();
+  covariance_.setZero();
+  for (int i = 0; i < static_cast<int>(dt_buf_.size()); i++)
+    Propagate(dt_buf_[i], acc_buf_[i], gyr_buf_[i]);
+}
+
 } // namespace factor
