@@ -8,6 +8,7 @@
 #include "Eigen/Core"
 #include "Eigen/Dense"
 #include <fstream>
+#include <iostream>
 
 struct ImuData
 {
