@@ -268,7 +268,8 @@ void Estimator::ProcessImage(const std::map<int, std::vector<std::pair<int, Eige
 
   else
   {
-    //feature_manager_->InitFramePoseByPnP(frame_count_, Ps_, Rs_, tic_, ric_);
+    if (!USE_IMU)
+      feature_manager_->InitFramePoseByPnP(frame_count_, Ps_, Rs_, tic_, ric_);
     feature_manager_->TriangulatePts(Ps_, Rs_, tic_, ric_);
     common::TicToc tim;
     Optimization();
