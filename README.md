@@ -13,7 +13,7 @@ VINS has been completely reconstructed and rewritten using C++ object-oriented, 
 
 ## Stero Only Mode Result :sunglasses:
 
-The results of running on the [Euroc](https://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets) dataset `MH_05_difficult` in stero only mode. The accuracy is evaluated by the [EVO](https://github.com/MichaelGrupp/evo) tool.
+The results of running on the [Euroc](https://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets) dataset `MH_05_difficult` in stero only mode. The accuracy is evaluated by the [EVO](https://github.com/MichaelGrupp/evo) tool, the RMSE is `0.40`
 
 <div align="center">
 
@@ -31,6 +31,26 @@ Generate simulate IMU data through [vio-data-simulation](https://github.com/HeYi
 
 </div>
 
+## Stero IMU Result :stuck_out_tongue_closed_eyes:
+
+The stero IMU mode is test success, the `evo_ape` result as follows, the RMSE is `0.294500`.
+
+```shell
+   max   0.466681
+  mean   0.273919
+median   0.284079
+   min   0.041530
+  rmse   0.294500
+   sse   96.357503
+   std   0.108160
+```
+
+<div align="center">
+
+<img src="./images/MH_05_Stero_Imu.png" width = 55%>
+
+</div>
+
 ## Reference :stuck_out_tongue_winking_eye:
 
 - [VINS-Fusion](https://github.com/HKUST-Aerial-Robotics/VINS-Fusion)
@@ -38,6 +58,6 @@ Generate simulate IMU data through [vio-data-simulation](https://github.com/HeYi
 
 ## TODO List
 
-- [ ] Add IMU to opt
+- [x] Add IMU to opt
 - [ ] Add deep method
 - [ ] Add other sensor
