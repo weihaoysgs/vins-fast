@@ -229,7 +229,7 @@ void Estimator::ProcessImage(const std::map<int, std::vector<std::pair<int, Eige
   {
     if (USE_IMU)
     {
-      //feature_manager_->InitFramePoseByPnP(frame_count_, Ps_, Rs_, tic_, ric_);
+      feature_manager_->InitFramePoseByPnP(frame_count_, Ps_, Rs_, tic_, ric_);
       feature_manager_->TriangulatePts(Ps_, Rs_, tic_, ric_);
       Optimization();
 
@@ -243,7 +243,6 @@ void Estimator::ProcessImage(const std::map<int, std::vector<std::pair<int, Eige
     if (!USE_IMU)
     {
       feature_manager_->InitFramePoseByPnP(frame_count_, Ps_, Rs_, tic_, ric_);
-      /// 得到了两帧的位姿了，那么就可以三角化同时被这两帧看到的特征点了,注意当前帧新提取的仍然不能被三角化
       feature_manager_->TriangulatePts(Ps_, Rs_, tic_, ric_);
       Optimization();
 
