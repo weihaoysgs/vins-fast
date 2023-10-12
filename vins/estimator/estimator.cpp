@@ -184,7 +184,7 @@ void Estimator::tBackendProcess()
         GetIMUInterval(previous_time_, current_time_, acc_vector, gyr_vector);
         if (!init_first_pose_flag_)
         {
-          InitFirstIMUPose(acc_vector);
+          InitFirstIMUPose(acc_vector, gyr_vector);
         }
         for (size_t i = 0; i < acc_vector.size(); i++)
         {
