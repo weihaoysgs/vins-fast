@@ -48,7 +48,7 @@ public:
   bool GetIMUInterval(double t0, double t1, std::vector<std::pair<double, Eigen::Vector3d>> &acc_vector,
                       std::vector<std::pair<double, Eigen::Vector3d>> &gyr_vector);
 
-  void InitFirstIMUPose(std::vector<std::pair<double, Eigen::Vector3d>> &acc_vector);
+  void InitFirstIMUPose(std::vector<std::pair<double, Eigen::Vector3d>> &acc_vector, std::vector<std::pair<double, Eigen::Vector3d>> &gyro_vector);
 
   void ProcessIMU(double t, double dt, const Eigen::Vector3d &linear_acceleration,
                   const Eigen::Vector3d &angular_velocity);

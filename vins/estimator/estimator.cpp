@@ -643,7 +643,7 @@ void Estimator::PrepareMarginalizationFactor()
         std::vector<int> drop_set;
         for (int i = 0; i < static_cast<int>(last_marginalization_parameter_blocks_.size()); i++)
         {
-          // ROS_ASSERT(last_marginalization_parameter_blocks[i] != para_SpeedBias[WINDOW_SIZE - 1]);
+          // assert(last_marginalization_parameter_blocks[i] != para_SpeedBias[WINDOW_SIZE - 1]);
           if (last_marginalization_parameter_blocks_[i] == param_pose_[WINDOW_SIZE - 1])
             drop_set.push_back(i);
         }
@@ -847,19 +847,28 @@ void Estimator::IMUCallback(const sensor_msgs::ImuConstPtr &imu_msg)
   gyr_buf_.push(std::make_pair(t, gyr));
 }
 
-void Estimator::InitFirstIMUPose(std::vector<std::pair<double, Eigen::Vector3d>> &acc_vector)
+void Estimator::InitFirstIMUPose(std::vector<std::pair<double, Eigen::Vector3d>> &acc_vector,
+                                 std::vector<std::pair<double, Eigen::Vector3d>> &gyro_vector)
 {
   LOG(INFO) << "init first imu pose";
   init_first_pose_flag_ = true;
   Eigen::Vector3d aver_ccc(0, 0, 0);
+  Eigen::Vector3d aver_gyro(0,0,0);
   for (auto &i : acc_vector)
   {
     aver_ccc = aver_ccc + i.second;
   }
+  for (auto &i : gyro_vector)
+  {
+    aver_gyro = aver_gyro + i.second;
+  }
+  aver_gyro = aver_gyro / aver_gyro.size();
   aver_ccc = aver_ccc / acc_vector.size();
   LOG(INFO) << "averge acc: " << aver_ccc.transpose();
+  LOG(INFO) << "average gyro: " << aver_gyro.transpose();
   Eigen::Matrix3d R0 = common::Algorithm::g2R(aver_ccc);
   Rs_[0] = R0;
+  Bgs_[0] = aver_gyro;
   LOG(INFO) << "init R0\n " << Rs_[0];
 }
 
