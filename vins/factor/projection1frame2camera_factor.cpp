@@ -3,6 +3,7 @@
 namespace factor {
 
 Eigen::Matrix2d ProjectionOneFrameTwoCamFactor::sqrt_info_;
+bool ProjectionOneFrameTwoCamFactor::cout_residual_ = false;
 
 ProjectionOneFrameTwoCamFactor::ProjectionOneFrameTwoCamFactor(const Eigen::Vector3d &_pts_i,
                                                                const Eigen::Vector3d &_pts_j,
@@ -83,7 +84,10 @@ bool ProjectionOneFrameTwoCamFactor::Evaluate(const double *const *parameters, d
       jacobian_td = reduce * ric2.transpose() * ric * velocity_i_ / inv_dep_i * -1.0 + sqrt_info_ * velocity_j_.head(2);
     }
   }
-
+  if(cout_residual_)
+  {
+    LOG(INFO) << "OneFrameTwoCam Res: " << residual.transpose() << ", normal: " << residual.norm();
+  }
   return true;
 }
 

@@ -15,6 +15,7 @@ public:
   MarginalizationFactor(MarginalizationInfo *marginalization_info);
   virtual bool Evaluate(double const *const *parameters, double *residuals, double **jacobi) const;
   MarginalizationInfo *marginalization_info_;
+  static bool cout_marg_residual_;
 };
 } // namespace factor
 

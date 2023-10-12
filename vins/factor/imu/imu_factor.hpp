@@ -16,6 +16,7 @@ public:
   IMUFactor(IntegrationBase *pre_integration): pre_integration_(pre_integration){};
   virtual bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const;
   IntegrationBase *pre_integration_;
+  static bool cout_imu_residual_;
 };
 } // namespace factor
 

@@ -4,6 +4,7 @@
 #include "factor/marginalization/marg_factor.hpp"
 
 namespace factor {
+bool MarginalizationFactor::cout_marg_residual_ = false;
 MarginalizationFactor::MarginalizationFactor(MarginalizationInfo *marginalization_info)
   : marginalization_info_(marginalization_info)
 {
@@ -51,6 +52,11 @@ bool MarginalizationFactor::Evaluate(const double *const *parameters, double *re
         jacobian.leftCols(local_size) = marginalization_info_->linearized_jacobi_.middleCols(idx, local_size);
       }
     }
+  }
+  if (cout_marg_residual_)
+  {
+    Eigen::VectorXd res = Eigen::Map<Eigen::VectorXd>(residuals, n);
+    LOG(INFO) << "Marg Residual: " << res.transpose() << ", normal: " << res.norm();
   }
   return true;
 }

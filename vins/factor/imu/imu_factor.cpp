@@ -4,7 +4,7 @@
 #include "factor/imu/imu_factor.hpp"
 
 namespace factor {
-
+bool IMUFactor::cout_imu_residual_ = false;
 bool IMUFactor::Evaluate(const double *const *parameters, double *double_residuals, double **jacobians) const
 {
   Eigen::Vector3d Pi(parameters[0][0], parameters[0][1], parameters[0][2]);
@@ -101,7 +101,10 @@ bool IMUFactor::Evaluate(const double *const *parameters, double *double_residua
       jacobian_speedbias_j = sqrt_info * jacobian_speedbias_j;
     }
   }
-
+  if(cout_imu_residual_)
+  {
+    LOG(INFO) << "IMU Residual: " << residual.transpose() << ", normal: " << residual.norm();
+  }
   return true;
 }
 } // namespace factor

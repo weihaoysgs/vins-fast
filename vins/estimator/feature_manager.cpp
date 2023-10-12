@@ -82,7 +82,8 @@ bool FeatureManager::AddFeatureAndCheckParallax(
   }
   else
   {
-    /// 视差大于等于最小视差，说明运动过快,两个图像的相似度降低等等情况，应该列为关键帧
+    /// If the parallax is greater than or equal to the minimum parallax, it indicates that the movement is too fast, 
+    /// the similarity between the two images is reduced, etc., and it should be listed as a key frame.
     return parallax_sum / parallax_num >= MIN_PARALLAX;
   }
 }
@@ -241,7 +242,7 @@ void FeatureManager::TriangulatePts(Eigen::Vector3d Ps[], Eigen::Matrix3d Rs[], 
         id_observed_feature.estimated_depth_ = INIT_DEPTH;
       continue;
     }
-    /// 被大于等于两帧以上观测到，但是没有被右边相机观测到
+    /// Observed by more than or equal to two frames, but not observed by the camera on the right
     else if (id_observed_feature.feature_per_frame_.size() > 1)
     {
       int imu_i = id_observed_feature.start_frame_;
@@ -295,11 +296,8 @@ void FeatureManager::RemoveBack()
   for (auto it = features_.begin(), it_next = features_.begin(); it != features_.end(); it = it_next)
   {
     it_next++;
-    /// 如果不是在滑窗中第一帧被观测到的，则剩余的landmark的起始帧要-1
     if (it->start_frame_ != 0)
       it->start_frame_--;
-    /// 如果是第一帧观测到的，则要删除该 landmark 在第一帧上的观测
-    /// 同时如果该landmark没有其他观测，则要删除
     else
     {
       it->feature_per_frame_.erase(it->feature_per_frame_.begin());
@@ -348,12 +346,10 @@ void FeatureManager::RemoveFront(int frame_count, int WINDOW_SIZE)
   {
     it_next++;
 
-    /// 如果是最新帧观测到的特征点，因为要marg掉次新帧，所以start_frame_要-1
     if (it->start_frame_ == frame_count)
     {
       it->start_frame_--;
     }
-    /// 如果不是，则要去掉该 landmark 在次新帧上的观测，同时如果这个 landmark 的观测为0，那么就要删除它
     else
     {
       int j = WINDOW_SIZE - 1 - it->start_frame_;
@@ -388,17 +384,13 @@ void FeatureManager::OutliersRejection(std::set<int> &removeIndex, const Eigen::
   {
     double err = 0;
     int errCnt = 0;
-    /// 被观测到的次数小于 4
     it_per_id.used_num_ = it_per_id.feature_per_frame_.size();
     if (it_per_id.used_num_ < 4)
       continue;
     feature_index++;
     int imu_i = it_per_id.start_frame_, imu_j = imu_i - 1;
-    /// 得到在第一帧上的观测
     Eigen::Vector3d pts_i = it_per_id.feature_per_frame_[0].point_;
-    /// 肯定已经被三角化了
     double depth = it_per_id.estimated_depth_;
-    /// 遍历所有的观测
     for (auto &it_per_frame : it_per_id.feature_per_frame_)
     {
       imu_j++;
@@ -464,7 +456,6 @@ int FeatureManager::getFeatureCount()
   int cnt = 0;
   for (auto &it : features_)
   {
-    /// 这里机会改变 it.used_num 这个值，但是也就是和后面的 size() 值是相等的，其实也用不上这个值
     it.used_num_ = it.feature_per_frame_.size();
     if (it.used_num_ >= 4)
     {
