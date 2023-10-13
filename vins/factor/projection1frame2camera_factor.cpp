@@ -114,10 +114,9 @@ void ProjectionOneFrameTwoCamFactor::ComputeResidual(const std::vector<const dou
   Eigen::Vector2d residual = (pts_camera_j / dep_j).head<2>() - pts_j_td.head<2>();
   if (cout_residual_)
   {
-    residual = sqrt_info_ * residual;
-    std::cout << __FILE__ << ":" << __LINE__ << ":" << "IMU Residual: " << residual.transpose() << "; normal: " << residual.norm();
-    residual = sqrt_info_ * residual;
-    std::cout << "; sqrt residual: " << residual.norm() << std::endl;
+    std::cout.precision(7);
+    LOG(INFO) << "OneFrameTwoCam Residual: " << residual.transpose() << "; normal: " << residual.norm()
+              << "; sqrt residual: " << (sqrt_info_ * residual).norm();
   }
 }
 

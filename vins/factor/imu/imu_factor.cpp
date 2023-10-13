@@ -127,10 +127,9 @@ void IMUFactor::ComputeResidual(const std::vector<const double *> parameters) co
   residual = pre_integration_->Evaluate(Pi, Qi, Vi, Bai, Bgi, Pj, Qj, Vj, Baj, Bgj);
   if (cout_imu_residual_)
   {
-    std::cout << __FILE__ << ":" << __LINE__ << ":" << "IMU Residual: " << residual.transpose() << "; normal: " << residual.norm();
     Eigen::Matrix<double, 15, 15> sqrt_info = Eigen::LLT<Eigen::Matrix<double, 15, 15>>(pre_integration_->covariance_.inverse()).matrixL().transpose();
-    residual = sqrt_info * residual;
-    std::cout << "; sqrt residual: " << residual.norm() << std::endl;
+    LOG(INFO) << "IMU Residual: " << residual.transpose() << "; normal: " << residual.norm()
+              << "; sqrt residual: " << (sqrt_info * residual).norm() << std::endl;
   }
 }
 } // namespace factor

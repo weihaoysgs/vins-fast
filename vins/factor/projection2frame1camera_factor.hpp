@@ -26,5 +26,6 @@ public:
   Eigen::Vector3d velocity_i_, velocity_j_;
   double td_i_, td_j_;
   static Eigen::Matrix2d sqrt_info_;
+  static bool cout_residual_;
 };
 } // namespace factor

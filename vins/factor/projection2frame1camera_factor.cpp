@@ -2,6 +2,7 @@
 
 namespace factor {
 Eigen::Matrix2d ProjectionTwoFrameOneCamFactor::sqrt_info_;
+bool ProjectionTwoFrameOneCamFactor::cout_residual_;
 ProjectionTwoFrameOneCamFactor::ProjectionTwoFrameOneCamFactor(const Eigen::Vector3d &pts_i,
                                                                const Eigen::Vector3d &pts_j,
                                                                const Eigen::Vector2d &vel_i,
@@ -191,8 +192,10 @@ void ProjectionTwoFrameOneCamFactor::ComputeResidual(const std::vector<const dou
   Eigen::Vector3d pts_camera_j = qic.inverse() * (pts_imu_j - tic);
   double dep_j = pts_camera_j.z();
   Eigen::Vector2d residual = (pts_camera_j / dep_j).head<2>() - pts_j_td.head<2>();
-  std::cout << __FILE__ << ":" << __LINE__ << ":" << "IMU Residual: " << residual.transpose() << "; normal: " << residual.norm();
-  residual = sqrt_info_ * residual;
-  std::cout << "; sqrt residual: " << residual.norm() << std::endl;
+  if(cout_residual_)
+  {
+    LOG(INFO) << "TwoFrameOneCam Residual: " << residual.transpose() << "; normal: " << residual.norm()
+              << "; sqrt residual: " << (sqrt_info_ * residual).norm();
+  }
 }
 } // namespace factor
