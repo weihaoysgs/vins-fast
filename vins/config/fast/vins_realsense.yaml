@@ -1,0 +1,72 @@
+%YAML:1.0
+
+# common parameters
+imu: 0
+num_of_cam: 2
+
+imu_topic: "/mavros/imu/data"
+image0_topic: "/camera/infra1/image_rect_raw"
+image1_topic: "/camera/infra2/image_rect_raw"
+output_path: "/home/weihao/codespace/whvio_ws/output/"
+output_file_name: "vio.txt"
+
+#ros_bag_path: "/home/weihao/dataset/FAST/success1.bag"
+ros_bag_path: "/home/weihao/dataset/FAST/bag/8.29/2023-08-29-18-19-51.bag"
+
+cam0_calib: "/home/weihao/codespace/whvio_ws/src/vins-fast/vins/config/fast/cam0_pinhole_d435f.yaml"
+cam1_calib: "/home/weihao/codespace/whvio_ws/src/vins-fast/vins/config/fast/cam1_pinhole_d435f.yaml"
+
+image_width: 640
+image_height: 480
+
+body_T_cam0: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: d
+   data: [ 1.6779807357839349e-02, -1.3227814153908224e-02,
+       9.9977170543966887e-01, 7.6199238354667090e-02,
+       -9.9912135733475838e-01, -3.8628969711876682e-02,
+       1.6257798637866805e-02, 1.3547394163352178e-02,
+       3.8405095789286581e-02, -9.9916606609297387e-01,
+       -1.3864378302221869e-02, 2.9174415075288659e-02, 0., 0., 0., 1. ]
+body_T_cam1: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: d
+   data: [ 1.9102303633029782e-02, -1.5837774163735163e-02,
+       9.9969208604722382e-01, 9.0110637219142156e-02,
+       -9.9906606107717066e-01, -3.9061607996318193e-02,
+       1.8471501955413860e-02, -3.6133060677620184e-02,
+       3.8757032905763378e-02, -9.9911128293613038e-01,
+       -1.6569149346332690e-02, 3.3404434665072334e-02, 0., 0., 0., 1. ]
+
+#Multiple thread support
+multiple_thread: 1
+
+#feature traker paprameters
+frontend_wait_key: 1
+max_cnt: 200            # max feature number in feature tracking
+min_dist: 15            # min distance between two features
+freq: 10                # frequence (Hz) of publish tracking result. At least 10Hz for good estimation. If set 0, the frequence will be same as raw image 
+F_threshold: 1.0        # ransac threshold (pixel)
+show_track: 1           # publish tracking image as topic
+flow_back: 1            # perform forward and backward optical flow to improve feature tracking accuracy
+focal_length: 460.0
+#optimization parameters
+camera_factor_mutli_scale: 0.45
+max_solver_time: 0.04  # max solver itration time (ms), to guarantee real time
+max_num_iterations: 8   # max solver itrations, to guarantee real time
+keyframe_parallax: 10.0 # keyframe selection threshold (pixel)
+
+cout_camera_residual: 0
+cout_marg_residual: 0
+cout_imu_residual_: 0
+
+#imu parameters         The more accurate parameters you provide, the better performance
+acc_n: 0.4              # accelerometer measurement noise standard deviation. #0.2   0.04
+gyr_n: 0.05             # gyroscope measurement noise standard deviation.     #0.05  0.004
+acc_w: 0.04             # accelerometer bias random work noise standard deviation.  #0.002
+gyr_w: 0.005            # gyroscope bias random work noise standard deviation.     #4.0e-5
+g_norm: 9.805           # gravity magnitude
+
+time_diff: -0.008
