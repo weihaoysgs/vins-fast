@@ -225,6 +225,11 @@ void Estimator::ProcessImage(const std::map<int, std::vector<std::pair<int, Eige
   else
     marg_flag_ = MarginalizationFlag::MARGIN_SECOND_NEW;
 
+  initial::ImageImuFrame img_imu_frame(image, time);
+  img_imu_frame.pre_integration_ = tmp_pre_integration_;
+  all_image_imu_frame_.insert(std::make_pair(time, img_imu_frame));
+  tmp_pre_integration_ = new factor::IntegrationBase{acc_0_, gyr_0_, Bas_[frame_count_], Bgs_[frame_count_]};
+
   if (solver_flag_ == SolverFlag::INITIAL)
   {
     if (USE_IMU)
@@ -235,6 +240,20 @@ void Estimator::ProcessImage(const std::map<int, std::vector<std::pair<int, Eige
 
       if (frame_count_ == WINDOW_SIZE)
       {
+        int i = 0;
+        for (auto frame_it = all_image_imu_frame_.begin(); frame_it != all_image_imu_frame_.end(); frame_it++)
+        {
+          frame_it->second.R_ = Rs_[i];
+          frame_it->second.T_ = Ps_[i];
+          i++;
+        }
+        LOG(INFO) << "Bgs: " << Bgs_[0].transpose();
+        initial::ImageImuFrame::SolveGyroscopeBias(all_image_imu_frame_, Bgs_, WINDOW_SIZE);
+        LOG(INFO) << "Bgs align: " << Bgs_[0].transpose();
+        for (int i = 0; i <= WINDOW_SIZE; i++)
+        {
+          pre_integrations_[i]->Repropagate(Eigen::Vector3d::Zero(), Bgs_[i]);
+        }
         solver_flag_ = NON_LINEAR;
         SlideWindow();
       }
@@ -455,6 +474,7 @@ void Estimator::Optimization()
 
     for (auto &id_per_frame : id_observed_feature.feature_per_frame_)
     {
+      /// window_i is start frame and window_j is end frame in the sliding window
       window_j++;
       if (window_i != window_j)
       {
@@ -772,8 +792,8 @@ void Estimator::double2vector()
     /// external param
     for (int i = 0; i < 2; i++)
     {
-      // tic_[i] = Eigen::Vector3d(param_ex_pose_[i][0], param_ex_pose_[i][1], param_ex_pose_[i][2]);
-      // ric_[i] = Eigen::Quaterniond(param_ex_pose_[i][6], param_ex_pose_[i][3], param_ex_pose_[i][4], param_ex_pose_[i][5]).normalized().toRotationMatrix();
+      tic_[i] = Eigen::Vector3d(param_ex_pose_[i][0], param_ex_pose_[i][1], param_ex_pose_[i][2]);
+      ric_[i] = Eigen::Quaterniond(param_ex_pose_[i][6], param_ex_pose_[i][3], param_ex_pose_[i][4], param_ex_pose_[i][5]).normalized().toRotationMatrix();
     }
     /// time differ param
     time_diff_ = param_td_[0][0];
@@ -853,7 +873,7 @@ void Estimator::InitFirstIMUPose(std::vector<std::pair<double, Eigen::Vector3d>>
   LOG(INFO) << "init first imu pose";
   init_first_pose_flag_ = true;
   Eigen::Vector3d aver_ccc(0, 0, 0);
-  Eigen::Vector3d aver_gyro(0,0,0);
+  Eigen::Vector3d aver_gyro(0, 0, 0);
   for (auto &i : acc_vector)
   {
     aver_ccc = aver_ccc + i.second;
@@ -891,6 +911,8 @@ void Estimator::ProcessIMU(double t, double dt, const Eigen::Vector3d &linear_ac
   if (frame_count_ != 0)
   {
     pre_integrations_[frame_count_]->push_back(dt, linear_acceleration, angular_velocity);
+    tmp_pre_integration_->push_back(dt, linear_acceleration, angular_velocity);
+
     dt_buf_[frame_count_].push_back(dt);
     linear_acceleration_buf_[frame_count_].push_back(linear_acceleration);
     angular_velocity_buf_[frame_count_].push_back(angular_velocity);
