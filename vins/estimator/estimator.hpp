@@ -10,6 +10,7 @@
 #include "factor/projection1frame2camera_factor.hpp"
 #include "factor/marginalization/marg_factor.hpp"
 #include "factor/imu/imu_factor.hpp"
+#include "initial/initial_alignment.hpp"
 #include "common/size_pose_param.hpp"
 #include "Eigen/Core"
 #include "common/visualization.hpp"
@@ -143,6 +144,9 @@ private:
   std::vector<double> dt_buf_[(WINDOW_SIZE + 1)];
   std::vector<Eigen::Vector3d> linear_acceleration_buf_[(WINDOW_SIZE + 1)];
   std::vector<Eigen::Vector3d> angular_velocity_buf_[(WINDOW_SIZE + 1)];
+
+  std::map<double, initial::ImageImuFrame> all_image_imu_frame_;
+  factor::IntegrationBase *tmp_pre_integration_;
 
   /// R_{imu,camera},t_{imu,camera}
   Eigen::Matrix3d ric_[2];
