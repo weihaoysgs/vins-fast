@@ -54,9 +54,9 @@ max_solver_time: 0.04  # max solver itration time (ms), to guarantee real time
 max_num_iterations: 8   # max solver itrations, to guarantee real time
 keyframe_parallax: 10.0 # keyframe selection threshold (pixel)
 
-cout_camera_residual: 1
+cout_camera_residual: 0
 cout_marg_residual: 0
-cout_imu_residual_: 1
+cout_imu_residual_: 0
 
 #imu parameters       The more accurate parameters you provide, the better performance
 acc_n: 0.1          # accelerometer measurement noise standard deviation. 
