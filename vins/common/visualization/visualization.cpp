@@ -40,5 +40,17 @@ void Visualization::PublishTrackImage(const cv::Mat &image, double t)
   sensor_msgs::ImagePtr img_track_msg = cv_bridge::CvImage(header, "bgr8", image).toImageMsg();
   pub_track_img_.publish(img_track_msg);
 }
+
 void Visualization::PublishPointCloud(double t) { }
+
+void Visualization::PublishCameraPose(const Eigen::Vector3d *Ps, const Eigen::Matrix3d *Rs, Eigen::Vector3d *tic,
+                                      Eigen::Matrix3d *ric, int window_size, std_msgs::Header &header)
+{
+  int i = window_size - 1;
+  Eigen::Vector3d P = Ps[i] + Rs[i] * tic[0];
+  Eigen::Quaterniond R = Eigen::Quaterniond(Rs[i] * ric[0]);
+  cam_pos_visual_->Reset();
+  cam_pos_visual_->AddPose(P, R);
+  cam_pos_visual_->publish_by(pub_camera_pose_visual_, header);
+}
 } // namespace common

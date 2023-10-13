@@ -13,7 +13,7 @@
 #include "initial/initial_alignment.hpp"
 #include "common/size_pose_param.hpp"
 #include "Eigen/Core"
-#include "common/visualization.hpp"
+#include "common/visualization/visualization.hpp"
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/eigen.hpp>
 #include "Eigen/Dense"

@@ -224,6 +224,8 @@ void Estimator::tBackendProcess()
 
       visualization_->PublishPath(header.stamp.toSec(), Ps_, Rs_, WINDOW_SIZE);
       visualization_->PublishTrackImage(feature_tracker_->getDrawTrackResultImg(), current_time_);
+      if (solver_flag_ == NON_LINEAR)
+        visualization_->PublishCameraPose(Ps_, Rs_, tic_, ric_, WINDOW_SIZE, header);
     }
 
     std::chrono::milliseconds dura(2);

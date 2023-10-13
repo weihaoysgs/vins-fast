@@ -13,6 +13,7 @@
 #include <nav_msgs/Odometry.h>
 #include "Eigen/Core"
 #include "Eigen/Dense"
+#include "common/visualization/cam_pose_visualization.hpp"
 #include "common/parameter.hpp"
 #include <fstream>
 #include "common/utils.hpp"
@@ -41,15 +42,24 @@ public:
     pub_track_img_ = n.advertise<sensor_msgs::Image>("track_image", 1000);
     pub_point_cloud_ = n.advertise<sensor_msgs::PointCloud>("point_cloud", 1000);
     path_.header.frame_id = "world";
+
+    pub_camera_pose_visual_ = n.advertise<visualization_msgs::MarkerArray>("camera_pose_visual", 1000);
+    cam_pos_visual_ = std::make_shared<CameraPoseVisualization>(1, 0, 0, 1);
+    cam_pos_visual_->setScale(0.4);
+    cam_pos_visual_->setLineWidth(0.05);
   }
 
   void PublishPath(double timestamp, const Eigen::Vector3d *Ps, const Eigen::Matrix3d *Rs, int window_size);
   void PublishTrackImage(const cv::Mat &image, double t);
   void PublishPointCloud(double t);
+  void PublishCameraPose(const Eigen::Vector3d *Ps, const Eigen::Matrix3d *Rs, Eigen::Vector3d *tic, Eigen::Matrix3d *ric,
+                         int window_size, std_msgs::Header &header);
 
 private:
+  std::shared_ptr<CameraPoseVisualization> cam_pos_visual_ = nullptr;
   ros::Publisher pub_path_, pub_track_img_;
   ros::Publisher pub_point_cloud_;
+  ros::Publisher pub_camera_pose_visual_;
   nav_msgs::Path path_;
   std::string vins_result_path_, vins_result_file_name_;
 };
