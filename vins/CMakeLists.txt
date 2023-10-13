@@ -14,7 +14,8 @@ estimator/feature_tracker.cpp
 estimator/estimator.cpp
 estimator/feature_manager.cpp
 common/parameter.cpp
-common/visualization.cpp
+common/visualization/cam_pose_visualization.cpp
+common/visualization/visualization.cpp
 factor/pose_local_parameterization.cpp
 factor/projection2frame1camera_factor.cpp
 factor/projection1frame2camera_factor.cpp
