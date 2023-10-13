@@ -14,6 +14,7 @@ public:
                                  const double _td_i, const double _td_j);
 
   virtual bool Evaluate(const double *const *parameters, double *residuals, double **jacobians) const override;
+  void ComputeResidual(const std::vector<const double *> parameters) const;
 
   Eigen::Vector3d pts_i_, pts_j_;
   Eigen::Vector3d velocity_i_, velocity_j_;

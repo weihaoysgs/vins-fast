@@ -19,6 +19,7 @@ public:
                        const Eigen::Vector3d &pts_i_td, const Eigen::Vector3d &pts_j_td,
                        double inv_dep_i, const Eigen::Quaterniond &qic,
                        const Eigen::Vector3d &tic, const Eigen::Vector2d &residual) const;
+  void ComputeResidual(const std::vector<const double *> parameters) const;
 
   /// 观测在优化过程中是不会变的，包括2d点和速度
   Eigen::Vector3d pts_i_, pts_j_;

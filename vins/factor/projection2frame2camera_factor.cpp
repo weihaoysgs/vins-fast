@@ -112,4 +112,35 @@ bool ProjectionTwoFrameTwoCamFactor::Evaluate(const double *const *parameters, d
   }
   return true;
 }
+
+void ProjectionTwoFrameTwoCamFactor::ComputeResidual(const std::vector<const double *> parameters) const {
+  Eigen::Vector3d Pi(parameters[0][0], parameters[0][1], parameters[0][2]);
+  Eigen::Quaterniond Qi(parameters[0][6], parameters[0][3], parameters[0][4], parameters[0][5]);
+
+  Eigen::Vector3d Pj(parameters[1][0], parameters[1][1], parameters[1][2]);
+  Eigen::Quaterniond Qj(parameters[1][6], parameters[1][3], parameters[1][4], parameters[1][5]);
+
+  Eigen::Vector3d tic(parameters[2][0], parameters[2][1], parameters[2][2]);
+  Eigen::Quaterniond qic(parameters[2][6], parameters[2][3], parameters[2][4], parameters[2][5]);
+
+  Eigen::Vector3d tic2(parameters[3][0], parameters[3][1], parameters[3][2]);
+  Eigen::Quaterniond qic2(parameters[3][6], parameters[3][3], parameters[3][4], parameters[3][5]);
+
+  double inv_dep_i = parameters[4][0];
+
+  double td = parameters[5][0];
+
+  Eigen::Vector3d pts_i_td = pts_i_, pts_j_td = pts_j_;
+  Eigen::Vector3d pts_camera_i = pts_i_td / inv_dep_i;
+  Eigen::Vector3d pts_imu_i = qic * pts_camera_i + tic;
+  Eigen::Vector3d pts_w = Qi * pts_imu_i + Pi;
+  Eigen::Vector3d pts_imu_j = Qj.inverse() * (pts_w - Pj);
+  Eigen::Vector3d pts_camera_j = qic2.inverse() * (pts_imu_j - tic2);
+  double dep_j = pts_camera_j.z();
+  Eigen::Vector2d residual = (pts_camera_j / dep_j).head<2>() - pts_j_td.head<2>();
+  residual = sqrt_info_ * residual;
+  std::cout << __FILE__ << ":" << __LINE__ << ":" << "IMU Residual: " << residual.transpose() << "; normal: " << residual.norm();
+  residual = sqrt_info_ * residual;
+  std::cout << "; sqrt residual: " << residual.norm() << std::endl;
+}
 } // namespace factor

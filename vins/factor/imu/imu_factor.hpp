@@ -15,6 +15,7 @@ public:
   IMUFactor() = delete;
   IMUFactor(IntegrationBase *pre_integration): pre_integration_(pre_integration){};
   virtual bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const;
+  void ComputeResidual(const std::vector<const double *> parameters) const;
   IntegrationBase *pre_integration_;
   static bool cout_imu_residual_;
 };

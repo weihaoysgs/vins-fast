@@ -101,10 +101,36 @@ bool IMUFactor::Evaluate(const double *const *parameters, double *double_residua
       jacobian_speedbias_j = sqrt_info * jacobian_speedbias_j;
     }
   }
-  if(cout_imu_residual_)
-  {
-    LOG(INFO) << "IMU Residual: " << residual.transpose() << ", normal: " << residual.norm();
-  }
+  // if (cout_imu_residual_)
+  // {
+  //   LOG(INFO) << "IMU Residual: " << residual.transpose() << ", normal: " << residual.norm();
+  // }
   return true;
+}
+
+void IMUFactor::ComputeResidual(const std::vector<const double *> parameters) const
+{
+  Eigen::Vector3d Pi(parameters[0][0], parameters[0][1], parameters[0][2]);
+  Eigen::Quaterniond Qi(parameters[0][6], parameters[0][3], parameters[0][4], parameters[0][5]);
+
+  Eigen::Vector3d Vi(parameters[1][0], parameters[1][1], parameters[1][2]);
+  Eigen::Vector3d Bai(parameters[1][3], parameters[1][4], parameters[1][5]);
+  Eigen::Vector3d Bgi(parameters[1][6], parameters[1][7], parameters[1][8]);
+
+  Eigen::Vector3d Pj(parameters[2][0], parameters[2][1], parameters[2][2]);
+  Eigen::Quaterniond Qj(parameters[2][6], parameters[2][3], parameters[2][4], parameters[2][5]);
+
+  Eigen::Vector3d Vj(parameters[3][0], parameters[3][1], parameters[3][2]);
+  Eigen::Vector3d Baj(parameters[3][3], parameters[3][4], parameters[3][5]);
+  Eigen::Vector3d Bgj(parameters[3][6], parameters[3][7], parameters[3][8]);
+  Eigen::Matrix<double, 15, 1> residual;
+  residual = pre_integration_->Evaluate(Pi, Qi, Vi, Bai, Bgi, Pj, Qj, Vj, Baj, Bgj);
+  if (cout_imu_residual_)
+  {
+    std::cout << __FILE__ << ":" << __LINE__ << ":" << "IMU Residual: " << residual.transpose() << "; normal: " << residual.norm();
+    Eigen::Matrix<double, 15, 15> sqrt_info = Eigen::LLT<Eigen::Matrix<double, 15, 15>>(pre_integration_->covariance_.inverse()).matrixL().transpose();
+    residual = sqrt_info * residual;
+    std::cout << "; sqrt residual: " << residual.norm() << std::endl;
+  }
 }
 } // namespace factor
