@@ -58,9 +58,23 @@ void Estimator::SetParameter()
             << ", IMU_TOPIC_NAME: " << IMU_TOPIC_NAME << ", USE_IMU:" << USE_IMU << ", WINDOW_SIZE:" << WINDOW_SIZE;
 
   ReadImuCameraExternalParam();
-  factor::ProjectionTwoFrameOneCamFactor::sqrt_info_ = 460.0 / 1.5 * Eigen::Matrix2d::Identity();
-  factor::ProjectionTwoFrameTwoCamFactor::sqrt_info_ = 460.0 / 1.5 * Eigen::Matrix2d::Identity();
-  factor::ProjectionOneFrameTwoCamFactor::sqrt_info_ = 460.0 / 1.2 * Eigen::Matrix2d::Identity();
+
+  double camera_factor_multi_scale = common::Setting::getSingleton()->Get<double>("camera_factor_mutli_scale");
+  LOG(INFO) << "camera_factor_multi_scale: " << camera_factor_multi_scale;
+  bool cout_camera_residual = common::Setting::getSingleton()->Get<int>("cout_camera_residual");
+  bool cout_imu_residual = common::Setting::getSingleton()->Get<int>("cout_imu_residual_");
+  bool cout_marg_residual = common::Setting::getSingleton()->Get<int>("cout_marg_residual");
+  factor::ProjectionTwoFrameOneCamFactor::sqrt_info_ =
+      460.0 / 1.5 * Eigen::Matrix2d::Identity() * camera_factor_multi_scale;
+  factor::ProjectionTwoFrameTwoCamFactor::sqrt_info_ =
+      460.0 / 1.5 * Eigen::Matrix2d::Identity() * camera_factor_multi_scale;
+  factor::ProjectionOneFrameTwoCamFactor::sqrt_info_ =
+      460.0 / 1.2 * Eigen::Matrix2d::Identity() * camera_factor_multi_scale * 0.73;
+  factor::ProjectionOneFrameTwoCamFactor::cout_residual_ = cout_camera_residual;
+  factor::ProjectionTwoFrameOneCamFactor::cout_residual_ = cout_camera_residual;
+  factor::ProjectionTwoFrameTwoCamFactor::cout_residual_ = cout_camera_residual;
+  factor::MarginalizationFactor::cout_marg_residual_ = cout_marg_residual;
+  factor::IMUFactor::cout_imu_residual_ = cout_imu_residual;
 }
 
 void Estimator::ReadImuCameraExternalParam()
@@ -459,6 +473,8 @@ void Estimator::Optimization()
       auto *imu_factor = new factor::IMUFactor(pre_integrations_[j]);
       problem.AddResidualBlock(
           imu_factor, nullptr, param_pose_[i], param_speed_bias_[i], param_pose_[j], param_speed_bias_[j]);
+      if (j == frame_count_)
+        imu_factor->ComputeResidual({param_pose_[i], param_speed_bias_[i], param_pose_[j], param_speed_bias_[j]});
     }
   }
   int feature_index = -1;
@@ -483,6 +499,9 @@ void Estimator::Optimization()
         auto *residual_block = new factor::ProjectionTwoFrameOneCamFactor(pts_i, pts_j,
             id_observed_feature.feature_per_frame_[0].velocity_, id_per_frame.velocity_,
                   id_observed_feature.feature_per_frame_[0].cur_td_, id_per_frame.cur_td_);
+        if (window_j == frame_count_)
+          residual_block->ComputeResidual({param_pose_[window_i], param_pose_[window_j], param_ex_pose_[0],
+                                                    param_feature_[feature_index], param_td_[0]});
         problem.AddResidualBlock(residual_block, loss_function, param_pose_[window_i],
                                   param_pose_[window_j], param_ex_pose_[0],
                                  param_feature_[feature_index], param_td_[0]);
@@ -496,7 +515,9 @@ void Estimator::Optimization()
           auto *residual = new factor::ProjectionTwoFrameTwoCamFactor(pts_i, pts_j_right,
                            id_observed_feature.feature_per_frame_[0].velocity_, id_per_frame.velocity_right_,
                                      id_observed_feature.feature_per_frame_[0].cur_td_, id_per_frame.cur_td_);
-
+          if (window_j == frame_count_)
+            residual->ComputeResidual({param_pose_[window_i], param_pose_[window_j],
+                                        param_ex_pose_[0], param_ex_pose_[1], param_feature_[feature_index], param_td_[0]});
           problem.AddResidualBlock(residual, loss_function, param_pose_[window_i], param_pose_[window_j],
                                    param_ex_pose_[0], param_ex_pose_[1], param_feature_[feature_index], param_td_[0]);
         }
@@ -506,6 +527,9 @@ void Estimator::Optimization()
                                 id_observed_feature.feature_per_frame_[0].velocity_,
                                  id_per_frame.velocity_, id_observed_feature.feature_per_frame_[0].cur_td_,
                                      id_per_frame.cur_td_);
+          if (window_j == frame_count_)
+            residual->ComputeResidual({param_ex_pose_[0], param_ex_pose_[1],
+                                      param_feature_[feature_index], param_td_[0]});
           problem.AddResidualBlock(residual, loss_function, param_ex_pose_[0], param_ex_pose_[1],
                                    param_feature_[feature_index], param_td_[0]);
           // clang-format on
