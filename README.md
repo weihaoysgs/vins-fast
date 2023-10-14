@@ -13,9 +13,9 @@ VINS has been completely reconstructed and rewritten using C++ object-oriented, 
 
 ## Quick Start In Three Minutes :wink:
 
-- build
+- **build**
 
-The test completely passed on Ubuntu20.04 system
+$\quad$ The test completely passed on Ubuntu20.04 system
 
 ```shell
 mkdir -p catkin_ws/src
@@ -25,7 +25,7 @@ cd ..
 catkin_make -j
 ```
 
-- run
+- **run**
 ```shell
 source devel/setup.zsh # or source devel/setup.bash
 roslaunch vins rviz.launch
@@ -33,9 +33,9 @@ roslaunch vins rviz.launch
 ./build/vins-fast/vins/test_feature_track \
 --config_file_path=/home/xx/catkin_ws/src/vins-fast/vins/config/euroc/euroc_stero.yaml
 ```
-- parameter
+- **parameter**
 
-maybe you need to change some parameter value in your `yaml` config file.
+$\quad$ maybe you need to change some parameter value in your `yaml` config file.
 ```shell
 output_path: "/home/xx/catkin_ws/" # the vio trajectory result will save as TUM format
 output_file_name: "vio.txt"
