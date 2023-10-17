@@ -38,3 +38,6 @@ target_link_libraries(test_imu_integration ${PROJECT_NAME})
 
 add_executable(test_ins_system test/ins/test_imu_factor.cpp)
 target_link_libraries(test_ins_system ${PROJECT_NAME})
+
+add_executable(test_vips_node test/ins/test_vips.cpp)
+target_link_libraries(test_vips_node ${PROJECT_NAME})

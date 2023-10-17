@@ -28,7 +28,7 @@ public:
   double timestamp_ = 0.;
   Eigen::Vector3d P_ = Eigen::Vector3d ::Zero();
   Eigen::Quaterniond R_ = Eigen::Quaterniond ::Identity();
-  Eigen::Vector3d V_ = Eigen::Vector3d ::Identity();
+  Eigen::Vector3d V_ = Eigen::Vector3d ::Zero();
 };
 
 // timestamp, gx, gy, gz, ax, ay, az
@@ -113,7 +113,7 @@ inline void ReadGroundTruthEurocPose(const std::string &pose_file_path, std::vec
       ss >> vel(0);
       ss >> vel(1);
       ss >> vel(2);
-      data.timestamp_ = time;
+      data.timestamp_ = time/1e9;
       data.R_ = q;
       data.P_ = t;
       data.V_ = vel;
