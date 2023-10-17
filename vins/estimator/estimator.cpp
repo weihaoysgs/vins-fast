@@ -252,7 +252,7 @@ void Estimator::ProcessImage(const std::map<int, std::vector<std::pair<int, Eige
     {
       feature_manager_->InitFramePoseByPnP(frame_count_, Ps_, Rs_, tic_, ric_);
       feature_manager_->TriangulatePts(Ps_, Rs_, tic_, ric_);
-      Optimization();
+      // Optimization();
 
       if (frame_count_ == WINDOW_SIZE)
       {
