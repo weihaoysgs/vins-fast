@@ -69,7 +69,7 @@ void Estimator::SetParameter()
   factor::ProjectionTwoFrameTwoCamFactor::sqrt_info_ =
       460.0 / 1.5 * Eigen::Matrix2d::Identity() * camera_factor_multi_scale;
   factor::ProjectionOneFrameTwoCamFactor::sqrt_info_ =
-      460.0 / 1.2 * Eigen::Matrix2d::Identity() * camera_factor_multi_scale * 0.73;
+      460.0 / 1.2 * Eigen::Matrix2d::Identity() * camera_factor_multi_scale;
   factor::ProjectionOneFrameTwoCamFactor::cout_residual_ = cout_camera_residual;
   factor::ProjectionTwoFrameOneCamFactor::cout_residual_ = cout_camera_residual;
   factor::ProjectionTwoFrameTwoCamFactor::cout_residual_ = cout_camera_residual;
