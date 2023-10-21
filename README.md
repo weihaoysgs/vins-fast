@@ -8,7 +8,7 @@
 
 </div>
 
-VINS has been completely reconstructed and rewritten using C++ object-oriented, and supports stero or stero + IMU.
+VINS has been completely reconstructed and rewritten using C++ object-oriented, and supports stereo or stereo + IMU.
 
 
 ## Quick Start In Three Minutes :wink:
@@ -46,9 +46,9 @@ cam0_calib: "/home/xx/catkin_ws/src/vins-fast/vins/config/euroc/cam0_mei.yaml"
 cam1_calib: "/home/xx/catkin_ws/src/vins-fast/vins/config/euroc/cam1_mei.yaml"
 ```
 
-## Stero Only Mode Result :sunglasses:
+## Stereo Only Mode Result :sunglasses:
 
-The results of running on the [Euroc](https://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets) dataset `MH_05_difficult` in stero only mode. The accuracy is evaluated by the [EVO](https://github.com/MichaelGrupp/evo) tool, the RMSE is `0.40`
+The results of running on the [Euroc](https://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets) dataset `MH_05_difficult` in stereo only mode. The accuracy is evaluated by the [EVO](https://github.com/MichaelGrupp/evo) tool, the RMSE is `0.40`
 
 <div align="center">
 
@@ -66,9 +66,9 @@ Generate simulate IMU data through [vio-data-simulation](https://github.com/HeYi
 
 </div>
 
-## Stero IMU Result :yum:
+## Stereo IMU Result :yum:
 
-The stero IMU mode is test success, the `evo_ape` result as follows, the RMSE is `0.240860`.
+The stereo IMU mode is test success, the `evo_ape` result as follows, the RMSE is `0.240860`.
 
 ```shell
    max	0.400143
