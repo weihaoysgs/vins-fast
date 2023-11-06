@@ -1,4 +1,4 @@
-# Vins-Modern [(Continuously updating...)](https://github.com/weihaoysgs/vins-fast) :heart_eyes:
+# Vins-Modern [(Continuously updating...)](https://github.com/weihaoysgs/vins-fast) :heart_eyes: 
 <div align="center">
 
 [English](README.md) | [Chinese](doc/Chinese.md)
